@@ -81,7 +81,10 @@ var playerObj = function(x, y) {
     this.h = 40;
     this.speed = 2;
     this.angle = 0;
-    this.prevAngle = 0;
+    this.slope = 0;
+    this.health = 6;
+    this.invul = 0;
+    this.frame = 0;
 }; //player object
 
 var pistolObj = function(x, y) {
@@ -90,6 +93,8 @@ var pistolObj = function(x, y) {
     this.speed = 2;
     this.w = 40;
     this.h = 40;
+    this.angle = 0;
+    this.slope = 0;
 }; //pistol object
 
 var bulletObj = function() {
@@ -98,7 +103,24 @@ var bulletObj = function() {
     this.fire = 0;
     this.w = 4;
     this.h = 8;
+    this.slope = 0;
+    this.angle = 0;
+    this.firstDraw = 0;
+    this.speed = 4;
 }; //bullet object
+
+var healthObj = function() {
+    this.x = 12;
+    this.y = 23;
+    this.health = 6;
+};
+
+var ammoObj = function() {
+    this.x = 652;
+    this.y = 23;
+    this.ammo = 12;
+    this.w = 144;
+};
 
 cloudObj.prototype.draw = function() {
     noStroke();
@@ -451,37 +473,146 @@ doorObj.prototype.draw = function() {
 }; //door drawings
 
 playerObj.prototype.draw = function() {
-    //if (this.angle === 0) {
+    push();
+    translate(this.x + 20, this.y + 20);
+
+    this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
+    this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
+    if (mouseX - (this.x + 20) > 0) {
+        this.angle = this.angle + PI;
+    }
+    rotate(this.angle);
+
+    if (this.invul === 0) {
         fill(0,0,0);
-        ellipse(this.x + 20, this.y + 25, 31, 31);
+        ellipse(0, 5, 31, 31);
 
         fill(255,18,0);
-        ellipse(this.x + 20, this.y + 25, 30, 30);
+        ellipse(0, 5, 30, 30);
 
         fill(0,0,0);
-        ellipse(this.x + 7, this.y + 12, 14, 14);
-        ellipse(this.x + 33, this.y + 12, 14, 14);
+        ellipse(-13, -8, 14, 14);
+        ellipse(13, -8, 14, 14);
 
         fill(255,18,0);
-        ellipse(this.x + 7, this.y + 12, 13, 13);
-        ellipse(this.x + 33, this.y + 12, 13, 13);
-  //  }
+        ellipse(-13, -8, 13, 13);
+        ellipse(13, -8, 13, 13);
+    }
+    pop();
 }; //player drawing
 
 pistolObj.prototype.draw = function() {
+    push();
+    translate(this.x + 20, this.y + 20);
+
+    this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
+    this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
+    if (mouseX - (this.x + 20) > 0) {
+        this.angle = this.angle + PI;
+    }
+    rotate(this.angle);
+
     fill(0,0,0);
-    rect(this.x + 29, this.y - 1, 8, 14);
+    rect(9, -21, 8, 14);
 
     fill(120,81,169);
-    rect(this.x + 30, this.y, 6, 12);
+    rect(10, -20, 6, 12);
+    pop();
 }; //pistol drawing
 
 bulletObj.prototype.draw = function() {
-    fill(255,255,255);
-    ellipse(this.x, this.y, 4, 8);
+    if (this.firstDraw === 0) {
+        push();
+        translate(this.x + 20, this.y + 20);
 
-    this.y -= 4;
+        this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
+        this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
+        if (mouseX - (this.x + 20) > 0) {
+            this.angle = this.angle + PI;
+        }
+        rotate(this.angle);
+
+        //this.firstDraw = 1;
+
+        fill(255,255,255);
+        ellipse(-20, -20, 4, 8);
+        pop();
+    }
+    else {
+        fill(255,255,255);
+        ellipse(this.x, this.y, 4, 8);
+
+        this.x += this.speed * sin(this.angle);
+        this.y -= this.speed * cos(this.angle);
+    }
 }; //bullet drawing and movement
+
+healthObj.prototype.draw = function() {
+    stroke(255,255,255,150);
+    strokeWeight(3);
+    fill(35,35,35,150);
+    rect(2, 2, 75, 40);
+
+    noStroke();
+    fill(255,255,255);
+    textSize(10);
+    text('Health:', 7, 13);
+
+    for (var h = 0; h < this.health; h++) {
+        if (h % 2 === 0) {
+            fill(0,0,0);
+            arc(this.x, this.y, 12, 12, PI, 2 * PI);
+            triangle(this.x - 7, this.y, this.x + 5, this.y, this.x + 5, this.y + 17);
+
+            fill(255,0,0);
+            arc(this.x, this.y, 10, 10, PI, 2 * PI);
+            triangle(this.x - 5, this.y, this.x + 5, this.y, this.x + 5, this.y + 15);
+        }
+        else {
+            fill(0,0,0);
+            arc(this.x + 10, this.y, 12, 12, PI, 2 * PI);
+            triangle(this.x + 7, this.y, this.x + 17, this.y, this.x + 5, this.y + 17);
+
+            fill(255,0,0);
+            arc(this.x + 10, this.y, 10, 10, PI, 2 * PI);
+            triangle(this.x + 5, this.y, this.x + 15, this.y, this.x + 5, this.y + 15);
+
+            this.x += 22;
+        }
+    }
+
+    this.x = 12;
+};
+
+ammoObj.prototype.draw = function() {
+    stroke(255,255,255,150);
+    strokeWeight(3);
+    fill(35,35,35,150);
+    rect(645, 2, 153, 40);
+
+    noStroke();
+    fill(255,255,255);
+    textSize(10);
+    text('Ammo:', 650, 13);
+
+    if (ammo.ammo > 0) {
+        for (var a = 0; a < this.ammo; a++) {
+            fill(255,200,0);
+            rect(this.x, this.y - 3, 8, 20, 20);
+        
+            fill(255,160,0);
+            arc(this.x + 4, this.y - 1, 7, 10, PI, 2 * PI);
+            rect(this.x - 1, this.y + 14, 10, 3, 15);   
+
+            this.x += 12;
+        }
+
+        this.x = 652;
+    }
+    else {
+        ammo.reloadAnim();
+    }
+};
 
 var gameStart = 0;
 var player = new playerObj(400, 720);
@@ -490,6 +621,8 @@ var snake = new snakeObj(350, 350);
 var snakes = [];
 var enemy = new enemyObj(550, 650);
 var pear = new pearObj(150, 450);
+var health = new healthObj();
+var ammo = new ammoObj();
 var clouds = [];
 var xWalls = 0;
 var yWalls = 0;
@@ -501,7 +634,12 @@ var pillars = [];
 var pits = [];
 var doors = [];
 var keyArray = [];
-var bullets = [new bulletObj(), new bulletObj(), new bulletObj(), new bulletObj(), new bulletObj()];
+var bullets = [new bulletObj(), new bulletObj(), 
+               new bulletObj(), new bulletObj(), 
+               new bulletObj(), new bulletObj(), 
+               new bulletObj(), new bulletObj(), 
+               new bulletObj(), new bulletObj(), 
+               new bulletObj(), new bulletObj()];
 var tilePitsX = 0;
 var tilePitsY = 0;
 var tileDoorsX = 0;
@@ -517,20 +655,28 @@ var topleftTile = ' ';
 var currFrameCount = 0;
 var bulletIndex = 0;
 var score = 0;
+var invulnerable = -100;
+var reloading = 0;
 
 var level1 = 0;
 
 var testFrame = 0;
 
 function mouseClicked() {
-    if ((mouseX >= 320 && mouseX <= 445 && mouseY >= 412 && mouseY <= 430) && gameStart === 0) { //go to instruction screen
+    if ((mouseX >= 320 && mouseX <= 445 && mouseY >= 412 && mouseY <= 430) && gameStart === 0) { //go to instruction screen from home screen
         gameStart = 2;
     }
-    else if (mouseX >= 320 && mouseX <= 370 && mouseY >= 380 && mouseY <= 400 && gameStart === 0) { //go to home scren from instruction screen
+    else if (mouseX >= 320 && mouseX <= 370 && mouseY >= 380 && mouseY <= 400 && gameStart === 0) { //go to game screen from home screen
         gameStart = 1;
     }
-    else if ((mouseX >= 35 && mouseX <= 90 && mouseY >= 755 && mouseY <= 775) && gameStart === 2) { //go to home scren from instruction screen
+    else if ((mouseX >= 35 && mouseX <= 90 && mouseY >= 755 && mouseY <= 775) && gameStart === 2) { //go to home screen from instruction screen
         gameStart = 0;
+    }
+};
+
+function mousePressed() {
+    if (gameStart === 1 && bulletIndex < 12) {
+        checkFire();
     }
 };
 
@@ -733,40 +879,32 @@ doorObj.prototype.checkOpening = function(tileTop, tileRight, tileBot, tileLeft)
 
 playerObj.prototype.move = function() {
     if ((keyArray[83] === 1 || keyArray[40] === 1) && (keyArray[65] === 1 || keyArray[37] === 1) && this.y < 760 && this.x > 0) {
-        this.y += this.speed/2;
-        this.x -= this.speed/2;
-        this.angle = 7;
+        this.y += this.speed/1.5;
+        this.x -= this.speed/1.5;
     }
     else if ((keyArray[83] === 1 || keyArray[40] === 1) && (keyArray[68] === 1 || keyArray[39] === 1) && this.x < 760 && this.y < 760) {
-        this.y += this.speed/2;
-        this.x += this.speed/2;
-        this.angle = 6;
+        this.y += this.speed/1.5;
+        this.x += this.speed/1.5;
     }
     else if ((keyArray[87] === 1 || keyArray[38] === 1) && (keyArray[68] === 1 || keyArray[39] === 1) && this.x < 760 && this.y > 0) {
-        this.y -= this.speed/2;
-        this.x += this.speed/2;
-        this.angle = 5;
+        this.y -= this.speed/1.5;
+        this.x += this.speed/1.5;
     }
     else if ((keyArray[87] === 1 || keyArray[38] === 1) && (keyArray[65] === 1 || keyArray[37] === 1) && this.y > 0 && this.x > 0) {
-        this.y -= this.speed/2;
-        this.x -= this.speed/2;
-        this.angle = 4;
+        this.y -= this.speed/1.5;
+        this.x -= this.speed/1.5;
     }
     else if ((keyArray[65] === 1 || keyArray[37] === 1) && this.x > 0) {
         this.x -= this.speed;
-        this.angle = 3;
     }
     else if ((keyArray[83] === 1 || keyArray[40] === 1) && this.y < 760) {
         this.y += this.speed;
-        this.angle =2;
     }
     else if ((keyArray[68] === 1 || keyArray[39] === 1) && this.x < 760) {
         this.x += this.speed;
-        this.angle = 1;
     }
     else if ((keyArray[87] === 1 || keyArray[38] === 1) && this.y > 0) {
         this.y -= this.speed;
-        this.angle = 0;
     }
 }; //player movements
 
@@ -777,8 +915,17 @@ playerObj.prototype.checkCollision = function(object) {
     var vY = (self.y + (self.h / 2)) - (object.y + (object.h / 2));
     
     // Half widths and half heights of the objects
-    var distW = (self.w / 2) + (object.w / 2);
-    var distH = (self.h / 2) + (object.h / 2);
+    var distW = 0;
+    var distH = 0;
+
+    if (object.pit === 10) {
+        distW = (self.w / 2) + (object.w / 20);
+        distH = (self.h / 2) + (object.h / 20);
+    }
+    else {
+        distW = (self.w / 2) + (object.w / 2);
+        distH = (self.h / 2) + (object.h / 2);
+    }
     var colDir = "";
 
     // if the x and y vector are less than the half width or half height,
@@ -808,63 +955,73 @@ playerObj.prototype.checkCollision = function(object) {
     }
     
     if (colDir === "TOP") {
-        if (object.enemy === 1) {
-            gameStart = 3;
+        if ((object.enemy === 1 || object.pit === 10) && (invulnerable < frameCount - 60)) {
+            this.health--;
+            invulnerable = frameCount;
         }
     }
     else if (colDir === "BOTTOM") {
-        if (object.enemy === 1) {
-            gameStart = 3;
+        if ((object.enemy === 1 || object.pit === 10) && (invulnerable < frameCount - 60)) {
+            this.health--;
+            invulnerable = frameCount;
+            this.hit = 1;
         }
     }
     else if (colDir === "RIGHT") {
-        if (object.enemy === 1) {
-            gameStart = 3;
+        if ((object.enemy === 1 || object.pit === 10) && (invulnerable < frameCount - 60)) {
+            this.health--;
+            invulnerable = frameCount;
         }    
     }
     else if (colDir === "LEFT") {
-        if (object.enemy === 1) {
-            gameStart = 3;
+        if ((object.enemy === 1 || object.pit === 10) && (invulnerable < frameCount - 60)) {
+            this.health--;
+            invulnerable = frameCount;
         }    
+    }
+
+    if (this.health <= 0) {
+        gameStart = 3;
     }
 }; //player collisions
 
+playerObj.prototype.pulse = function() {
+    if (this.invul === 0) {
+        this.invul = 1;
+    }
+    else {
+        this.invul = 0;
+    }
+};
+
 pistolObj.prototype.move = function() {
     if ((keyArray[83] === 1 || keyArray[40] === 1) && (keyArray[65] === 1 || keyArray[37] === 1) && this.y < 760 && this.x > 0) {
-        this.y += this.speed/2;
-        this.x -= this.speed/2;
-        this.angle = 7;
+        this.y += this.speed/1.5;
+        this.x -= this.speed/1.5;
     }
     else if ((keyArray[83] === 1 || keyArray[40] === 1) && (keyArray[68] === 1 || keyArray[39] === 1) && this.x < 760 && this.y < 760) {
-        this.y += this.speed/2;
-        this.x += this.speed/2;
-        this.angle = 6;
+        this.y += this.speed/1.5;
+        this.x += this.speed/1.5;
     }
     else if ((keyArray[87] === 1 || keyArray[38] === 1) && (keyArray[68] === 1 || keyArray[39] === 1) && this.x < 760 && this.y > 0) {
-        this.y -= this.speed/2;
-        this.x += this.speed/2;
-        this.angle = 5;
+        this.y -= this.speed/1.5;
+        this.x += this.speed/1.5;
     }
     else if ((keyArray[87] === 1 || keyArray[38] === 1) && (keyArray[65] === 1 || keyArray[37] === 1) && this.y > 0 && this.x > 0) {
-        this.y -= this.speed/2;
-        this.x -= this.speed/2;
-        this.angle = 4;
+        this.y -= this.speed/1.5;
+        this.x -= this.speed/1.5;
     }
     else if ((keyArray[65] === 1 || keyArray[37] === 1) && this.x > 0) {
         this.x -= this.speed;
-        this.angle = 3;
     }
     else if ((keyArray[83] === 1 || keyArray[40] === 1) && this.y < 760) {
         this.y += this.speed;
-        this.angle =2;
     }
     else if ((keyArray[68] === 1 || keyArray[39] === 1) && this.x < 760) {
         this.x += this.speed;
-        this.angle = 1;
     }
     else if ((keyArray[87] === 1 || keyArray[38] === 1) && this.y > 0) {
         this.y -= this.speed;
-        this.angle = 0;
     }
 }; //move pistol with player
 
@@ -875,8 +1032,17 @@ pistolObj.prototype.checkCollision = function(object) {
     var vY = (self.y + (self.h / 2)) - (object.y + (object.h / 2));
     
     // Half widths and half heights of the objects
-    var distW = (self.w / 2) + (object.w / 2);
-    var distH = (self.h / 2) + (object.h / 2);
+    var distW = 0;
+    var distH = 0;
+
+    if (object.pit === 10) {
+        distW = (self.w / 2) + (object.w / 20);
+        distH = (self.h / 2) + (object.h / 20);
+    }
+    else {
+        distW = (self.w / 2) + (object.w / 2);
+        distH = (self.h / 2) + (object.h / 2);
+    }
     var colDir = "";
 
     // if the x and y vector are less than the half width or half height,
@@ -903,19 +1069,6 @@ pistolObj.prototype.checkCollision = function(object) {
                 self.x -= oX;
             }
         }
-    }
-    
-    if (colDir === "TOP") {
-
-    }
-    else if (colDir === "BOTTOM") {
-     
-    }
-    else if (colDir === "RIGHT") {
-     
-    }
-    else if (colDir === "LEFT") {
-     
     }
 }; //pistol collisions to prevent leaving player's hand
 
@@ -959,35 +1112,52 @@ bulletObj.prototype.checkCollision = function(object) {
     if (colDir === "TOP") {
         this.fire = 0;
         object.dead = 1;
+        this.firstDraw = 0;
     }
     else if (colDir === "BOTTOM") {
         this.fire = 0;  
-        object.dead = 1;     
+        object.dead = 1;   
+        this.firstDraw = 0;  
     }
     else if (colDir === "RIGHT") {
         this.fire = 0;  
-        object.dead = 1;     
+        object.dead = 1;   
+        this.firstDraw = 0;  
     }
     else if (colDir === "LEFT") {
         this.fire = 0;  
-        object.dead = 1;     
+        object.dead = 1;   
+        this.firstDraw = 0;  
     }
 }; //bullet collions
 
-var checkFire = function() {
-    if (keyArray[32] === 1) {
-        if (currFrameCount < (frameCount - 10)) {
-            currFrameCount = frameCount;
-            bullets[bulletIndex].fire = 1;
-            bullets[bulletIndex].x = pistol.x + 32;
-            bullets[bulletIndex].y = pistol.y;
-            bulletIndex++;
-            
-            if (bulletIndex > 4) {
-                bulletIndex = 0;
-            }
-        }
+healthObj.prototype.updateHealth = function(object) {
+    this.health = object.health;
+};
+
+ammoObj.prototype.reloadAnim = function() {
+    ammo.ammo = 0;
+    bulletIndex = 12;
+    fill(255,255,255);
+    rect(this.x - 2, this.y - 1, this.w, 17);
+
+    this.w -= 6;
+
+    if (this.w <= 0) {
+        bulletIndex = 0;
+        ammo.ammo = 12;
+        this.w = 144;
+        reloading = 0;
     }
+};
+
+var checkFire = function() {
+    bullets[bulletIndex].fire = 1;
+    bullets[bulletIndex].firstDraw = 0;
+    bullets[bulletIndex].x = pistol.x + 32;
+    bullets[bulletIndex].y = pistol.y;
+    bulletIndex++;
+    ammo.ammo -= 1;
 }; //reused fire code from enchanted fruit project
 
 var tileMapLv1 = [
@@ -1036,10 +1206,15 @@ var initTilemapLv1 = function() {
     level1 = 1;
 }; //game tilemap initialization
 
+function preload() {
+    myFont = loadFont('assets/SuperLegendBoy-4w8Y.ttf');
+}
+
 function setup() {
     createCanvas(800, 800);
     frameRate(60);
     angleMode(RADIANS);
+    textFont(myFont);
 
     for (var i = 0; i < 22; i ++) {
         clouds.push(new cloudObj(random(-50, 850), random(-50, 850)));
@@ -1062,7 +1237,7 @@ function draw() {
 
         fill(0, 0, 0);
         textSize(40);
-        text("Tomb Traverser", 280, 200);
+        text("Tomb Traverser", 200, 200);
         textSize(25);
         text("Start\nInstructions", 320, 400);
 
@@ -1189,10 +1364,14 @@ function draw() {
             if (snakes[h].dead === 0) {
                 snakes[h].draw();
                 snakes[h].move();
+
                 player.checkCollision(snakes[h]);
+                pistol.checkCollision(snakes[h]);
 
                 for (var b = 0; b < bullets.length; b++) {
-                    bullets[b].checkCollision(snakes[h]);
+                    if (bullets[b].fire === 1) {
+                        bullets[b].checkCollision(snakes[h]);
+                    }
                 }
             }
             else {
@@ -1208,16 +1387,27 @@ function draw() {
 
         player.draw();
         player.move();
+        if (player.frame < (frameCount - 5) && (invulnerable > frameCount - 60)) {
+            player.frame = frameCount;
+            player.pulse();
+        }
 
         pistol.draw();
         pistol.move();
-
-        checkFire();
 
         for (i = 0; i < bullets.length; i++) {
             if (bullets[i].fire === 1) {
                 bullets[i].draw();
             }
+        }
+
+        health.updateHealth(player);
+        health.draw();
+        ammo.draw();
+
+        if (keyArray[82] === 1 && reloading === 0) {
+            reloading = 1;
+            ammo.reloadAnim();
         }
     }
     else if (gameStart === 2) {
