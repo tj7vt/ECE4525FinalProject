@@ -90,6 +90,8 @@ var playerObj = function(x, y) {
 var pistolObj = function(x, y) {
     this.x = x;
     this.y = y;
+    this.xReal = 0;
+    this.yReal = 0;
     this.speed = 2;
     this.w = 40;
     this.h = 40;
@@ -476,10 +478,22 @@ playerObj.prototype.draw = function() {
     push();
     translate(this.x + 20, this.y + 20);
 
-    this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
-    this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
-    if (mouseX - (this.x + 20) > 0) {
-        this.angle = this.angle + PI;
+    if (mouseX - (this.x + 20) === 0 && (mouseY - (this.y + 20) <= 0)) {
+        this.angle = 0;
+    }
+    else if (mouseX - (this.x + 20) === 0 && (mouseY - (this.y + 20) > 0)) {
+        this.angle = PI;
+    }
+    else {
+        this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
+        this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
+        if (mouseX - (this.x + 20) > 0) {
+            this.angle = this.angle + PI;
+        }
+
+        if (this.angle < 0) {
+            this.angle = this.angle + 2 * PI;
+        }
     }
     rotate(this.angle);
 
@@ -505,12 +519,30 @@ pistolObj.prototype.draw = function() {
     push();
     translate(this.x + 20, this.y + 20);
 
-    this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
-    this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
-    if (mouseX - (this.x + 20) > 0) {
-        this.angle = this.angle + PI;
+    if (mouseX - (this.x + 20) === 0 && (mouseY - (this.y + 20) <= 0)) {
+        this.angle = 0;
+    }
+    else if (mouseX - (this.x + 20) === 0 && (mouseY - (this.y + 20) > 0)) {
+        this.angle = PI;
+    }
+    else {
+        this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
+        this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
+        if (mouseX - (this.x + 20) > 0) {
+            this.angle = this.angle + PI;
+        }
+
+        if (this.angle < 0) {
+            this.angle = this.angle + 2 * PI;
+        }
     }
     rotate(this.angle);
+
+    var xComp = (12 * cos(-this.angle) - 17 * sin(-this.angle)) + 20;
+    var yComp = -(12 * sin(-this.angle) + 17 * cos(-this.angle)) + 20;
+
+    this.xReal = this.x + xComp;
+    this.yReal = this.y + yComp;
 
     fill(0,0,0);
     rect(9, -21, 8, 14);
@@ -520,23 +552,11 @@ pistolObj.prototype.draw = function() {
     pop();
 }; //pistol drawing
 
-bulletObj.prototype.draw = function() {
+bulletObj.prototype.draw = function(object) {
     if (this.firstDraw === 0) {
-        push();
-        translate(this.x + 20, this.y + 20);
+        this.angle = object.angle;
 
-        this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
-        this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
-        if (mouseX - (this.x + 20) > 0) {
-            this.angle = this.angle + PI;
-        }
-        rotate(this.angle);
-
-        //this.firstDraw = 1;
-
-        fill(255,255,255);
-        ellipse(-20, -20, 4, 8);
-        pop();
+        this.firstDraw = 1;
     }
     else {
         fill(255,255,255);
@@ -1154,8 +1174,8 @@ ammoObj.prototype.reloadAnim = function() {
 var checkFire = function() {
     bullets[bulletIndex].fire = 1;
     bullets[bulletIndex].firstDraw = 0;
-    bullets[bulletIndex].x = pistol.x + 32;
-    bullets[bulletIndex].y = pistol.y;
+    bullets[bulletIndex].x = pistol.xReal;
+    bullets[bulletIndex].y = pistol.yReal;
     bulletIndex++;
     ammo.ammo -= 1;
 }; //reused fire code from enchanted fruit project
@@ -1163,18 +1183,18 @@ var checkFire = function() {
 var tileMapLv1 = [
     "bbbbbbbbbbbbbbbbbbbb",
     "b                  b",
-    "b       h     ffff b",
-    "b  ff       f   hf b",
+    "b             ffff b",
+    "b  ff       f    f b",
     "b  ff       f    f b",
     "b           f    f b",
     "b           ffff   b",
-    "b  h               b",
-    "b              h   b",
+    "b                  b",
+    "b                  b",
     "w     ffff         v",
     "w     ffff         v",
     "b     ffff         b",
     "b     ffff         b",
-    "b             h    b",
+    "b                  b",
     "b                  b",
     "bf             fff b",
     "bf               f b",
@@ -1385,6 +1405,12 @@ function draw() {
 
         score = 0;
 
+        for (i = 0; i < bullets.length; i++) {
+            if (bullets[i].fire === 1) {
+                bullets[i].draw(pistol);
+            }
+        }
+
         player.draw();
         player.move();
         if (player.frame < (frameCount - 5) && (invulnerable > frameCount - 60)) {
@@ -1394,12 +1420,6 @@ function draw() {
 
         pistol.draw();
         pistol.move();
-
-        for (i = 0; i < bullets.length; i++) {
-            if (bullets[i].fire === 1) {
-                bullets[i].draw();
-            }
-        }
 
         health.updateHealth(player);
         health.draw();
