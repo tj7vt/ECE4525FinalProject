@@ -12,22 +12,36 @@ var wallObj = function(x , y) {
     this.h = 40;
 }; //wall object
 
-new p5(); //used to have random movement of enemeies until algorithms for chasing implemented
-
-var snakeObj = function(x, y) {
+var snakeObj = function(x, y, breed) {
     this.x = x;
     this.y = y;
     this.w = 20;
-    this.h = 20;
-    this.speedX = random(-2, 2);
-    this.speedY = random(-2, 2);
-    this.dead = 0;
+    this.h = 35;
+    this.speed = 2.05;
     this.enemy = 1;
+    this.phase = 0;
+    this.breed = breed;
+    this.frame = 0;
+    this.angle = 0;
+    this.slope = 0;
+    this.health = 2;
 }; //enemy 1 object (snake)
 
-var pearObj = function(x, y, stop) {
+var beetleObj = function(x, y, stop) {
     this.x = x;
     this.y = y;
+    this.w = 40;
+    this.h = 40;
+    this.speedX = 0.4 / 1.5;
+    this.speedY = 0.4 / 1.5;
+    this.enemy = 1;
+    this.phase = 0;
+    this.breed = 0;
+    this.frame = 0;
+    this.angle = 0;
+    this.slope = 0;
+    this.health = 6;
+    this.seen = 0;
 }; //enemy 2 object (beetle)
 
 var enemyObj = function(x, y) {
@@ -103,7 +117,7 @@ var bulletObj = function() {
     this.x = 0;
     this.y = 0;
     this.fire = 0;
-    this.w = 4;
+    this.w = 8;
     this.h = 8;
     this.slope = 0;
     this.angle = 0;
@@ -165,48 +179,238 @@ wallObj.prototype.draw = function() {
     rect(this.x + 39, this.y, 1, 40);
 }; //wall drawing
 
-snakeObj.prototype.draw = function() {
-    stroke(43, 0, 255);
-    fill(43, 0, 255);
+snakeObj.prototype.draw = function(object) {
+    push();
+    translate(this.x + 20, this.y + 20);
 
-    ellipse(this.x + 10.5, this.y + 5, 12, 8);
-    if (this.jump === 0) {
-        line(this.x  + 12.5, this.y + 7, this.x + 12.5, this.y + 20);
-        line(this.x + 6.5, this.y + 7, this.x + 6.5, this.y + 20);
+    if (this.frame < (frameCount - 20)) {
+        this.frame = frameCount;
+        this.phase++;
+    }
+
+    if (object.x + 20 - (this.x + 20) === 0 && (object.y + 20 - (this.y + 20) <= 0)) {
+        this.angle = 0;
+    }
+    else if (object.x + 20 - (this.x + 20) === 0 && (object.y + 20 - (this.y + 20) > 0)) {
+        this.angle = PI;
     }
     else {
-        line(this.x + 6.5, this.y+ 7, this.x + 3.5, this.y + 10);
-        line(this.x + 3.5, this.y + 10, this.x + 8.5, this.y + 16);
-        line(this.x + 9.5, this.y + 7, this.x + 16.5, this.y + 10);
-        line(this.x + 16.5, this.y + 10, this.x + 11.5, this.y + 16);
+        this.slope = (object.y + 20 - (this.y + 20)) / (object.x + 20 - (this.x + 20));
+        this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
+        if (object.x + 20 - (this.x + 20) > 0) {
+            this.angle = this.angle + PI;
+        }
+
+        if (this.angle < 0) {
+            this.angle = this.angle + 2 * PI;
+        }
     }
-    fill(255, 255, 255);
-    noStroke();
-    rect(this.x + 6, this.y + 3, 3, 3);
-    rect(this.x + 12, this.y + 3, 3, 3);
-    fill(0, 0, 0);
-    rect(this.x + 7, this.y + 4, 1, 1);
-    rect(this.x + 13, this.y + 4, 1, 1);
+    this.angle = this.angle + PI;
+    rotate(this.angle);
+
+    strokeWeight(8);
+
+    if (this.breed === 0) {
+        fill(0,128,0);
+        stroke(0,128,0);
+    }
+    else if (this.breed === 1) {
+        fill(128,0,0);
+        stroke(128,0,0);
+    }
+    else {
+        fill(0,0,128);
+        stroke(0,0,128);
+    }
+
+    if (this.phase % 4 === 0 || this.phase % 4 === 2) {
+        curve(0, 0, 0, 10, 0, -10, 0, 0);
+        noStroke();
+        triangle(-8, 10, 8, 10, 0, 20);
+
+        if (this.breed === 0) {
+            fill(154,205,50);
+        }
+        else if (this.breed === 1) {
+            fill(255,165,0);
+        }
+        else {
+            fill(186,85,211);
+        }
+        
+        quad(0, -13, 5, -8, 0, -3, -5, -8);
+        quad(0, 0, 5, 5, 0, 10, -5, 5);
+    }
+    else if (this.phase % 4 === 1) {
+        curve(30, 5, 0, 10, 0, -10, 25, -10);
+        noStroke();
+        triangle(-8, 10, 8, 10, 0, 20);
+
+        if (this.breed === 0) {
+            fill(154,205,50);
+        }
+        else if (this.breed === 1) {
+            fill(255,165,0);
+        }
+        else {
+            fill(186,85,211);
+        }
+
+        quad(-2, -13, 3, -8, -2, -3, -7, -8);
+        quad(-3, 0, 2, 5, -3, 10, -8, 5);
+    }
+    else {
+        curve(-45, 5, 0, 10, 0, -10, -35, -10);
+        noStroke();
+        triangle(-8, 10, 8, 10, 0, 20);
+
+        if (this.breed === 0) {
+            fill(154,205,50);
+        }
+        else if (this.breed === 1) {
+            fill(255,165,0);
+        }
+        else {
+            fill(186,85,211);
+        }
+
+        quad(2, -13, 7, -8, 2, -3, -3, -8);
+        quad(3, 0, 8, 5, 3, 10, -2, 5);
+    }
+
+    fill(255,255,255);
+    ellipse(-3, 13, 5, 5);
+    ellipse(2, 13, 5, 5);
+
+    fill(0,0,0);
+    ellipse(-3, 13, 2, 2);
+    ellipse(2, 13, 2, 2);
+
+    fill(200,0,0);
+    rect(-1, 20, 2, 5);
+
+    pop();
 }; //snake drawing
 
-pearObj.prototype.draw = function() {
-    fill(249, 166, 2);
+beetleObj.prototype.draw = function() {
+    push();
+    translate(this.x + 20, this.y + 20);
+
+    if (this.frame < (frameCount - 20)) {
+        this.frame = frameCount;
+        this.phase++;
+    }
+
+    if (this.speedX === 0 && this.speedY) {
+        this.angle = 0;
+    }
+    else if (this.speedX === 0 && this.speedY > 0) {
+        this.angle = PI;
+    }
+    else {
+        this.slope = (this.speedY) / (this.speedX);
+        this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
+        if (this.speedX > 0) {
+            this.angle = this.angle + PI;
+        }
+
+        if (this.angle < 0) {
+            this.angle = this.angle + 2 * PI;
+        }
+    }
+    rotate(this.angle);
+
+    strokeWeight(3);
+        stroke(0,0,0);
+        noFill();
+
+    if ((this.phase % 4 === 0 || this.phase % 4 === 2) && this.seen === 0) {
+        line(-20,0,-27,0);
+        line(20,0,27,0);
+        line(-20,11,-27,11);
+        line(20,11,27,11);
+        line(-20,-11,-27,-11);
+        line(20,-11,27,-11);
+    }
+    else if (this.phase % 4 === 1 && this.seen === 0) {
+        line(-20,0,-27,-5);
+        line(20,0,27,-5);
+        line(-20,11,-27,6);
+        line(20,11,27,6);
+        line(-20,-11,-27,-16);
+        line(20,-11,27,-16);
+    }
+    else if (this.phase % 4 === 3 && this.seen === 0) {
+        line(-20,0,-27,5);
+        line(20,0,27,5);
+        line(-20,11,-27,16);
+        line(20,11,27,16);
+        line(-20,-11,-27,-6);
+        line(20,-11,27,-6);
+    }
 
     noStroke();
-    ellipse(this.x, this.y, 16, 16);
-    ellipse(this.x, this.y - 7, 10, 10);
-    stroke(139,69,19);
-    line(this.x, this.y - 12, this.x + 3, this.y - 15); 
-    
-    if (this.hit !== 0) {
-        angleMode = "radians";
-        fill(255, 0, 0);
-        triangle(this.x - 4, this.y - 7, this.x - 1, this.y - 7, this.x - 1, this.y - 5);
-        triangle(this.x + 4, this.y - 7, this.x + 1, this.y - 7, this.x + 1, this.y - 5);
-        fill(249, 166, 2);
-        stroke(0, 0, 0);
-        arc(this.x, this.y + 2, 12, 6, 3.14, 2*3.14);
+
+    if (this.seen === 0) {
+        fill(138,43,226);
+        ellipse(0,0,45,40);
+
+        fill(0,0,0);
+        arc(0,12,32,17,0,PI);
+
+        fill(220,0,0);
+        ellipse(-10,15,5,5);
+        ellipse(10,15,5,5);
+
+        stroke(0,0,0);
+        strokeWeight(3);
+        line(0,15,0,-19);
     }
+    else {
+        fill(138,43,226);
+        ellipse(0,0,45,40);
+
+        fill(0,0,0);
+        arc(0,12,32,17,0,PI);
+
+        fill(220,0,0);
+        ellipse(-10,15,5,5);
+        ellipse(10,15,5,5);
+
+        fill(138,43,226);
+        arc(0,14,32,17,PI,2*PI);
+        arc(0,16,26,14,0,PI);
+
+        stroke(0,0,0);
+        strokeWeight(3);
+        line(0,15,0,-19);
+    }
+
+    if (this.health <= 4) {
+        strokeWeight(1);
+
+        line(0, 0, 10, 5);
+        line(10, 5, 15, 8);
+        line(15, 8, 20, 8);
+        line(12, 6, 17, 3);
+
+        line(-10, -2, -16, -8);
+        line(-10, -2, -4, -15);
+        line(-4, -15, 0, -8);
+        line(-4, -15, -9, -18);
+
+        if (this.health <= 2) {
+            line(0, -10, 7, -3);
+            line(7, -3, 10, -8);
+            line(10, -8, 7, -15);
+            line(10, -8, 16, -13);
+
+            line(0, 12, -22, 0);
+            line(-10, 6, -10, -2);
+        }
+    }
+    noStroke();
+    pop();
 }; //beetle drawing
 
 enemyObj.prototype.draw = function() {
@@ -559,8 +763,11 @@ bulletObj.prototype.draw = function(object) {
         this.firstDraw = 1;
     }
     else {
-        fill(255,255,255);
-        ellipse(this.x, this.y, 4, 8);
+        fill(0,0,0,);
+        ellipse(this.x, this.y, this.w + 1, this.h + 1);
+
+        fill(255,200,0);
+        ellipse(this.x, this.y, this.w, this.h);
 
         this.x += this.speed * sin(this.angle);
         this.y -= this.speed * cos(this.angle);
@@ -639,8 +846,9 @@ var player = new playerObj(400, 720);
 var pistol = new pistolObj(400, 720);
 var snake = new snakeObj(350, 350);
 var snakes = [];
+var beetles = [];
 var enemy = new enemyObj(550, 650);
-var pear = new pearObj(150, 450);
+var beetle = new beetleObj(150, 450);
 var health = new healthObj();
 var ammo = new ammoObj();
 var clouds = [];
@@ -719,11 +927,70 @@ cloudObj.prototype.move = function() {
 }; //animation for clouds
 
 snakeObj.prototype.move = function() {
-    this.x += this.speedX;
-    this.y += this.speedY;
+    this.x += this.speed * sin(this.angle + PI);
+    this.y -= this.speed * cos(this.angle + PI);
 }; //snake random movement
 
 snakeObj.prototype.checkCollision = function(object) {
+    var self = this;
+    // get the vectors to check against
+    var vX = (self.x + 10 + (self.w / 2)) - (object.x + (object.w / 2));
+    var vY = (self.y + 5 + (self.h / 2)) - (object.y + (object.h / 2));
+
+    
+    // Half widths and half heights of the objects
+    var distW = (self.w / 2) + (object.w / 2);
+    var distH = (self.h / 2) + (object.h / 2);
+    var colDir = "";
+
+    // if the x and y vector are less than the half width or half height,
+    // they we must be inside the object, causing a collision
+    if (abs(vX) < distW && abs(vY) < distH) {
+        // figures out on which side we are colliding (top, bottom, left, or right)
+        var oX = distW - abs(vX);
+        var oY = distH - abs(vY);
+        
+        if (oX > oY) {
+            if (vY > 0) {
+                colDir = "TOP";
+                self.y += oY;
+            } else {
+                colDir = "BOTTOM";
+                self.y -= oY;
+            }
+        } else {
+            if (vX > 0) {
+                colDir = "LEFT";
+                self.x += oX;
+            } else {
+                colDir = "RIGHT";
+                self.x -= oX;
+            }
+        }
+    }
+    
+    if (colDir === "TOP") {
+
+    }
+    else if (colDir === "BOTTOM") {    
+
+    }
+    else if (colDir === "RIGHT") { 
+
+    }
+    else if (colDir === "LEFT") {      
+
+    }
+}; //snake collisions
+
+beetleObj.prototype.move = function() {
+    if (this.seen === 0) {
+        this.x += this.speedX;
+        this.y -= this.speedY;
+    }
+}; //snake random movement
+
+beetleObj.prototype.checkCollision = function(object) {
     var self = this;
     // get the vectors to check against
     var vX = (self.x + (self.w / 2)) - (object.x + (object.w / 2));
@@ -761,16 +1028,16 @@ snakeObj.prototype.checkCollision = function(object) {
     }
     
     if (colDir === "TOP") {
-        this.speedY = -this.speedY;
+        this.speedY = -random(0.1,0.5);
     }
     else if (colDir === "BOTTOM") {    
-        this.speedY = -this.speedY;  
+        this.speedY = random(0.1,0.5);
     }
     else if (colDir === "RIGHT") { 
-        this.speedX = -this.speedX;
+        this.speedX = -random(0.1,0.5);
     }
     else if (colDir === "LEFT") {      
-        this.speedX = -this.speedX; 
+        this.speedX = random(0.1,0.5);
     }
 }; //snake collisions
 
@@ -1095,8 +1362,13 @@ pistolObj.prototype.checkCollision = function(object) {
 bulletObj.prototype.checkCollision = function(object) {
     var self = this;
     // get the vectors to check against
-    var vX = (self.x - 2 + (self.w / 2)) - (object.x + (object.w / 2));
+    var vX = (self.x - 4 + (self.w / 2)) - (object.x + (object.w / 2));
     var vY = (self.y - 4 + (self.h / 2)) - (object.y + (object.h / 2));
+
+    if (object.enemy === 1) {
+        vX -= 10;
+        vY -= 5;
+    }
     
     // Half widths and half heights of the objects
     var distW = (self.w / 2) + (object.w / 2);
@@ -1131,22 +1403,22 @@ bulletObj.prototype.checkCollision = function(object) {
     
     if (colDir === "TOP") {
         this.fire = 0;
-        object.dead = 1;
+        object.health--;
         this.firstDraw = 0;
     }
     else if (colDir === "BOTTOM") {
         this.fire = 0;  
-        object.dead = 1;   
+        object.health--;   
         this.firstDraw = 0;  
     }
     else if (colDir === "RIGHT") {
         this.fire = 0;  
-        object.dead = 1;   
+        object.health--; 
         this.firstDraw = 0;  
     }
     else if (colDir === "LEFT") {
         this.fire = 0;  
-        object.dead = 1;   
+        object.health--;   
         this.firstDraw = 0;  
     }
 }; //bullet collions
@@ -1187,15 +1459,15 @@ var tileMapLv1 = [
     "b  ff       f    f b",
     "b  ff       f    f b",
     "b           f    f b",
-    "b           ffff   b",
+    "b       h   ffff   b",
     "b                  b",
     "b                  b",
     "w     ffff         v",
     "w     ffff         v",
-    "b     ffff         b",
+    "b     ffff   h     b",
     "b     ffff         b",
     "b                  b",
-    "b                  b",
+    "b    e             b",
     "bf             fff b",
     "bf               f b",
     "bf             f ffb",
@@ -1217,7 +1489,10 @@ var initTilemapLv1 = function() {
                     break;
                 case 'v': doors.push(new doorObj(j*40, i*40, 1, i, j));
                     break;
-                case 'h': snakes.push(new snakeObj(j*40, i*40));
+                case 'h': snakes.push(new snakeObj(j*40, i*40, round(random(0, 2))));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    break;
+                case 'e': beetles.push(new beetleObj(j*40, i*40));
                     grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
                     break;
             }
@@ -1338,13 +1613,21 @@ function draw() {
             pistol.checkCollision(walls[j]);
 
             for (var h = 0; h < snakes.length; h++) {
-                if (snakes[h].dead === 0) {
+                if (snakes[h].health > 0) {
                     snakes[h].checkCollision(walls[j]);
                 }
             }
 
+            for (var e = 0; e < beetles.length; e++) {
+                if (beetles[e].health > 0) {
+                    beetles[e].checkCollision(walls[j]);
+                }
+            }
+
             for (var b = 0; b < bullets.length; b++) {
-                bullets[b].checkCollision(walls[j]);
+                if (bullets[b].fire === 1) {
+                    bullets[b].checkCollision(walls[j]);
+                }
             }
         }
         
@@ -1358,8 +1641,14 @@ function draw() {
             pistol.checkCollision(pits[m]);
 
             for (var h = 0; h < snakes.length; h++) {
-                if (snakes[h].dead === 0) {
+                if (snakes[h].health > 0) {
                     snakes[h].checkCollision(pits[m]);
+                }
+            }
+
+            for (var e = 0; e < beetles.length; e++) {
+                if (beetles[e].health > 0) {
+                    beetles[e].checkCollision(pits[m]);
                 }
             }
         }
@@ -1370,27 +1659,64 @@ function draw() {
             pistol.checkCollision(doors[n]);
 
             for (var h = 0; h < snakes.length; h++) {
-                if (snakes[h].dead === 0) {
+                if (snakes[h].health > 0) {
                     snakes[h].checkCollision(doors[n]);
                 }
             }
 
+            for (var e = 0; e < beetles.length; e++) {
+                if (beetles[e].health > 0) {
+                    beetles[e].checkCollision(doors[n]);
+                }
+            }
+
             for (var b = 0; b < bullets.length; b++) {
-                bullets[b].checkCollision(doors[n]);
+                if (bullets[b].fire === 1) {
+                    bullets[b].checkCollision(doors[n]);
+                }
             }
         }
 
         for (var h = 0; h < snakes.length; h++) {
-            if (snakes[h].dead === 0) {
-                snakes[h].draw();
-                snakes[h].move();
+            if (snakes[h].health > 0) {
+                snakes[h].draw(player);
+                snakes[h].move(player);
 
                 player.checkCollision(snakes[h]);
                 pistol.checkCollision(snakes[h]);
 
+                for (var e = 0; e < beetles.length; e++) {
+                    if (beetles[e].health > 0) {
+                        beetles[e].checkCollision(snakes[h]);
+                    }
+                }
+
                 for (var b = 0; b < bullets.length; b++) {
                     if (bullets[b].fire === 1) {
                         bullets[b].checkCollision(snakes[h]);
+                    }
+                }
+            }
+            else {
+                score++;
+
+                if (score === 5) {
+                    gameStart = 4;
+                }
+            }
+        }
+
+        for (var e = 0; e < beetles.length; e++) {
+            if (beetles[e].health > 0) {
+                beetles[e].draw(player);
+                beetles[e].move(player);
+
+                player.checkCollision(beetles[e]);
+                pistol.checkCollision(beetles[e]);
+
+                for (var b = 0; b < bullets.length; b++) {
+                    if (bullets[b].fire === 1) {
+                        bullets[b].checkCollision(beetles[e]);
                     }
                 }
             }
@@ -1447,9 +1773,9 @@ function draw() {
             triangle(5, 755, 30, 765, 5, 775);
         }
 
-        snake.draw();
+        snake.draw(snake);
         enemy.draw();
-        pear.draw();
+        beetle.draw();
     }
     else if (gameStart === 3) {
         fill(0,0,0);
