@@ -64,6 +64,13 @@ var skullObj = function(x, y) {
     this.fire = 0;
     this.xReal = x + 20;
     this.yReal = y + 20;
+    this.fireballs =  [new fireballObj(), new fireballObj(),
+                       new fireballObj(), new fireballObj(),
+                       new fireballObj(), new fireballObj(),
+                       new fireballObj(), new fireballObj(),
+                       new fireballObj(), new fireballObj(),
+                       new fireballObj(), new fireballObj()];
+    this.fireballIndex = 0;
 }; //enemy 3 object (skull)
 
 var fireballObj = function() {
@@ -115,7 +122,8 @@ var doorObj = function(x, y, type, tilemapX, tilemapY) {
     this.tilemapX = tilemapX;
     this.tilemapY = tilemapY;
     this.w = 40;
-    this.h = 80;
+    this.h = 40;
+    this.door = 1;
 }; //door obeject
 
 var playerObj = function(x, y) {
@@ -141,6 +149,7 @@ var pistolObj = function(x, y) {
     this.h = 40;
     this.angle = 0;
     this.slope = 0;
+    this.type = 0;
 }; //pistol object
 
 var bulletObj = function() {
@@ -153,6 +162,7 @@ var bulletObj = function() {
     this.angle = 0;
     this.firstDraw = 0;
     this.speed = 4;
+    this.type = 0;
 }; //bullet object
 
 var healthObj = function() {
@@ -181,6 +191,25 @@ var paperObj = function(x, y) {
 var nailObj = function(x, y) {
     this.x = x;
     this.y = y;
+};
+
+var grassObj = function(x, y) {
+    this.x = x;
+    this.y = y;
+}; //grass object
+
+var templeObj = function(x, y) {
+    this.x = x;
+    this.y = y;
+};
+
+var powerUpObj = function(x, y) {
+    this.x = x;
+    this.y = y;
+    this.w = 10;
+    this.h = 30;
+    this.got = 0;
+    this.pickUp = 1;
 };
 
 cloudObj.prototype.draw = function() {
@@ -393,32 +422,48 @@ beetleObj.prototype.draw = function(object) {
     }
 
     strokeWeight(3);
-        stroke(0,0,0);
-        noFill();
+    stroke(0,0,0);
+    noFill();
 
-    if ((this.phase % 4 === 0 || this.phase % 4 === 2) && this.seen === 0) {
-        line(-20,0,-27,0);
+    if (this.phase % 4 === 0 && this.seen === 0) { // middle
+        line(-20,0,-27,0); //middle -> middle
         line(20,0,27,0);
-        line(-20,11,-27,11);
-        line(20,11,27,11);
-        line(-20,-11,-27,-11);
-        line(20,-11,27,-11);
+
+        line(-18,11,-27,16); //front -> forward
+        line(18,11,27,16);
+
+        line(-18,-11,-27,-16); //back -> backward
+        line(18,-11,27,-16);
     }
-    else if (this.phase % 4 === 1 && this.seen === 0) {
-        line(-20,0,-27,-5);
-        line(20,0,27,-5);
-        line(-20,11,-27,6);
-        line(20,11,27,6);
-        line(-20,-11,-27,-16);
-        line(20,-11,27,-16);
-    }
-    else if (this.phase % 4 === 3 && this.seen === 0) {
-        line(-20,0,-27,5);
+    else if (this.phase % 4 === 1 && this.seen === 0) { // backward
+        line(-20,0,-27,5); //middle -> forward
         line(20,0,27,5);
-        line(-20,11,-27,16);
-        line(20,11,27,16);
-        line(-20,-11,-27,-6);
-        line(20,-11,27,-6);
+
+        line(-18,11,-27,11); //front -> middle
+        line(18,11,27,11);
+
+        line(-18,-11,-27,-11); //back -> middle
+        line(18,-11,27,-11);
+    }
+    else if (this.phase % 4 === 2 && this.seen === 0) {
+        line(-20,0,-27,0); //middle -> middle
+        line(20,0,27,0);
+
+        line(-18,11,-27,6); //front -> backward
+        line(18,11,27,6);
+
+        line(-18,-11,-27,-6); //back -> forward
+        line(18,-11,27,-6);
+    }
+    else if (this.phase % 4 === 3 && this.seen === 0) { //forward
+        line(-20,0,-27,-5); //middle -> backward
+        line(20,0,27,-5);
+
+        line(-18,11,-27,11); //front -> middle
+        line(18,11,27,11);
+
+        line(-18,-11,-27,-11); //back -> middle
+        line(18,-11,27,-11);
     }
 
     noStroke();
@@ -491,7 +536,7 @@ skullObj.prototype.draw = function(object) {
 
     if (this.frame < (frameCount - 90)) {
         this.frame = frameCount;
-        checkBall(this);
+        this.fireballs[this.fireballIndex].checkBall(this);
     }
 
     if (object.x + 20 - (this.x + 20) === 0 && (object.y + 20 - (this.y + 20) <= 0)) {
@@ -757,6 +802,7 @@ pitObj.prototype.draw = function() {
 }; //pit drawings
 
 doorObj.prototype.draw = function() {
+    noStroke();
     if (this.opening === 0) { //opening is top
         fill(0,0,0);
         rect(this.x - 6, this.y + 46, 47, -92);
@@ -764,8 +810,11 @@ doorObj.prototype.draw = function() {
         if (this.type === 0) {
             fill(255,215,0);
         }
-        else {
+        else if (this.type === 1) {
             fill(224,224,224);
+        }
+        else {
+            fill(255,0,0);
         }
 
         rect(this.x - 5, this.y + 45, 50, -90);
@@ -852,20 +901,20 @@ playerObj.prototype.draw = function() {
     pop();
 }; //player drawing
 
-pistolObj.prototype.draw = function() {
+pistolObj.prototype.draw = function(object) {
     push();
-    translate(this.x + 20, this.y + 20);
+    translate(object.x + 20, object.y + 20);
 
-    if (mouseX - (this.x + 20) === 0 && (mouseY - (this.y + 20) <= 0)) {
+    if (mouseX - (object.x + 20) === 0 && (mouseY - (object.y + 20) <= 0)) {
         this.angle = 0;
     }
-    else if (mouseX - (this.x + 20) === 0 && (mouseY - (this.y + 20) > 0)) {
+    else if (mouseX - (object.x + 20) === 0 && (mouseY - (object.y + 20) > 0)) {
         this.angle = PI;
     }
     else {
-        this.slope = (mouseY - (this.y + 20)) / (mouseX - (this.x + 20));
+        this.slope = (mouseY - (object.y + 20)) / (mouseX - (object.x + 20));
         this.angle = atan((0 + this.slope) / (1 + (0 * this.slope))) - (90 * (PI / 180));
-        if (mouseX - (this.x + 20) > 0) {
+        if (mouseX - (object.x + 20) > 0) {
             this.angle = this.angle + PI;
         }
 
@@ -878,13 +927,19 @@ pistolObj.prototype.draw = function() {
     var xComp = (12 * cos(-this.angle) - 17 * sin(-this.angle)) + 20;
     var yComp = -(12 * sin(-this.angle) + 17 * cos(-this.angle)) + 20;
 
-    this.xReal = this.x + xComp;
-    this.yReal = this.y + yComp;
+    this.xReal = object.x + xComp;
+    this.yReal = object.y + yComp;
 
     fill(0,0,0);
     rect(9, -21, 8, 14);
 
-    fill(120,81,169);
+    if (this.type === 0) {
+        fill(120,81,169);
+    }
+    else {
+        fill(0,255,0);
+    }
+
     rect(10, -20, 6, 12);
     pop();
 }; //pistol drawing
@@ -899,7 +954,12 @@ bulletObj.prototype.draw = function(object) {
         fill(0,0,0,);
         ellipse(this.x, this.y, this.w + 1, this.h + 1);
 
-        fill(255,200,0);
+        if (this.type === 0) {
+            fill(255,200,0);
+        }
+        else {
+            fill(0,255,0);
+        }
         ellipse(this.x, this.y, this.w, this.h);
 
         this.x += this.speed * sin(this.angle);
@@ -944,7 +1004,7 @@ healthObj.prototype.draw = function() {
     this.x = 12;
 };
 
-ammoObj.prototype.draw = function() {
+ammoObj.prototype.draw = function(object) {
     stroke(255,255,255,150);
     strokeWeight(3);
     fill(35,35,35,150);
@@ -955,12 +1015,17 @@ ammoObj.prototype.draw = function() {
     textSize(10);
     text('Ammo:', 650, 13);
 
-    if (ammo.ammo > 0) {
+    if (this.ammo > 0) {
         for (var a = 0; a < this.ammo; a++) {
             fill(255,200,0);
             rect(this.x, this.y - 3, 8, 20, 20);
         
-            fill(255,160,0);
+            if (object.type === 0) {
+                fill(255,160,0);
+            }
+            else {
+                fill(0,255,0);
+            }
             arc(this.x + 4, this.y - 1, 7, 10, PI, 2 * PI);
             rect(this.x - 1, this.y + 14, 10, 3, 15);   
 
@@ -970,7 +1035,7 @@ ammoObj.prototype.draw = function() {
         this.x = 652;
     }
     else {
-        ammo.reloadAnim();
+        this.reloadAnim();
     }
 };
 
@@ -978,20 +1043,36 @@ noticeBoardObj.prototype.draw = function() {
     fill(160,82,45);
     stroke(0,0,0);
     strokeWeight(1);
+    rect(this.x + 100, this.y - 30, 50, 630);
+    rect(this.x + 550, this.y - 30, 50, 630);
     rect(this.x, this.y, 700, 500);
+
+    fill(244,164,96);
+    rect(this.x + 25, this.y + 25, 650, 450);
 
     noStroke();
 };
 
-paperObj.prototype.draw = function() {
+paperObj.prototype.draw = function(object) {
     fill(248,248,255);
     stroke(0,0,0);
     strokeWeight(1);
     rect(this.x, this.y, 60, 80);
+    var barLoc = this.x + 10;
 
-    fill(255,0,0);
-    rect(this.x + 10, this.y + 65, 3, 10);
-    rect(this.x + 17, this.y + 65, 3, 10);
+    for (var h = 0; h < object.health; h++) {
+        if (h <= 1) {
+            fill(255,0,0);
+        }
+        else if (h <= 3) {
+            fill(255,215,0);
+        }
+        else {
+            fill(127,255,0);
+        }
+        rect(barLoc, this.y + 65, 3, 10);
+        barLoc += 7;
+    }
 
     noStroke();
 };
@@ -1005,22 +1086,133 @@ nailObj.prototype.draw = function() {
     noStroke();
 };
 
+grassObj.prototype.draw = function() {
+    fill(44, 125, 10);
+    noStroke();
+    triangle(this.x, this.y, this.x - 2, this.y - 5, this.x + 5, this.y);
+    triangle(this.x + 2, this.y, this.x + 7, this.y - 8, this.x + 5, this.y);
+    triangle(this.x, this.y, this.x + 2, this.y - 9, this.x + 4, this.y);
+};
+
+templeObj.prototype.draw = function() {
+    fill(87, 158, 87);
+    rect(this.x - 25, this.y + 500, 800, 100);
+
+    fill(169,169,169);
+    stroke(0,0,0);
+    strokeWeight(1);
+    rect(this.x, this.y, 750, 500);
+
+    fill(0,0,0);
+    rect(this.x, this.y + 96, 750, 5);
+    rect(this.x, this.y + 197, 750, 5);
+    rect(this.x, this.y + 298, 750, 5);
+    rect(this.x, this.y + 399, 750, 5);
+
+    rect(this.x + 102, this.y, 5, 96);
+    rect(this.x + 209, this.y, 5, 96);
+    rect(this.x + 316, this.y, 5, 96);
+    rect(this.x + 423, this.y, 5, 96);
+    rect(this.x + 530, this.y, 5, 96);
+    rect(this.x + 637, this.y, 5, 96);
+
+    rect(this.x + 46, this.y + 101, 5, 96);
+    rect(this.x + 163, this.y + 101, 5, 96);
+    rect(this.x + 270, this.y + 101, 5, 96);
+    rect(this.x + 377, this.y + 101, 5, 96);
+    rect(this.x + 484, this.y + 101, 5, 96);
+    rect(this.x + 591, this.y + 101, 5, 96);
+    rect(this.x + 698, this.y + 101, 5, 96);
+
+    rect(this.x + 102, this.y + 202, 5, 96);
+    rect(this.x + 209, this.y + 202, 5, 96);
+    rect(this.x + 316, this.y + 202, 5, 96);
+    rect(this.x + 423, this.y + 202, 5, 96);
+    rect(this.x + 530, this.y + 202, 5, 96);
+    rect(this.x + 637, this.y + 202, 5, 96);
+
+    rect(this.x + 46, this.y + 303, 5, 96);
+    rect(this.x + 163, this.y + 303, 5, 96);
+    rect(this.x + 270, this.y + 303, 5, 96);
+    rect(this.x + 377, this.y + 303, 5, 96);
+    rect(this.x + 484, this.y + 303, 5, 96);
+    rect(this.x + 591, this.y + 303, 5, 96);
+    rect(this.x + 698, this.y + 303, 5, 96);
+
+    rect(this.x + 102, this.y + 404, 5, 96);
+    rect(this.x + 209, this.y + 404, 5, 96);
+    rect(this.x + 316, this.y + 404, 5, 96);
+    rect(this.x + 423, this.y + 404, 5, 96);
+    rect(this.x + 530, this.y + 404, 5, 96);
+    rect(this.x + 637, this.y + 404, 5, 96);
+
+    rect(this.x + 275, this.y + 250, 200, 250);
+    arc(this.x + 375, this.y + 250, 200, 200, PI, PI*2);
+
+    fill(105,105,105);
+    rect(this.x - 25, this.y - 50, 800, 100);
+
+    fill(160,82,45);
+    rect(this.x + 528.5, this.y + 331.5, 14, 180);
+    rect(this.x + 657, this.y + 331.5, 14, 180);
+    rect(this.x + 500, this.y + 340, 200, 143);
+
+    fill(244,164,96);
+    rect(this.x + 507, this.y + 347, 185.7, 128.7);
+
+    fill(248,248,255);
+    rect(this.x + 495, this.y + 400, 17.1, 22.9);
+    rect(this.x + 688, this.y + 370, 17.1, 22.9);
+    rect(this.x + 688, this.y + 445, 17.1, 22.9);
+
+    fill(169,169,169);
+    ellipse(this.x + 532.5, this.y + 343, 3, 3);
+    ellipse(this.x + 538.5, this.y + 343, 3, 3);
+    ellipse(this.x + 532.5, this.y + 480, 3, 3);
+    ellipse(this.x + 538.5, this.y + 480, 3, 3);
+
+    ellipse(this.x + 661, this.y + 343, 3, 3);
+    ellipse(this.x + 667, this.y + 343, 3, 3);
+    ellipse(this.x + 661, this.y + 480, 3, 3);
+    ellipse(this.x + 667, this.y + 480, 3, 3);
+
+    ellipse(this.x + 503, this.y + 404, 3, 3);
+    ellipse(this.x + 696, this.y + 374, 3, 3);
+    ellipse(this.x + 696, this.y + 449, 3, 3);
+
+    noStroke();
+};
+
+powerUpObj.prototype.draw = function() {
+    fill(0,255,0);
+    stroke(0,0,0);
+    strokeWeight(1);
+    rect(this.x, this.y, 6, 12);
+
+    noStroke();
+};
+
 var gameStart = 0;
+var temple = new templeObj(25, 200);
 var player = new playerObj(400, 720);
 var pistol = new pistolObj(400, 720);
 var playerInstr = new playerObj(400, 760);
 var pistolInstr = new pistolObj(400, 760);
 var snake = new snakeObj(720, 255);
-var skull = new skullObj(720, 650);
-var beetle = new beetleObj(150, 450);
+var skull = new skullObj(720, 550);
+var beetle = new beetleObj(35, 370);
 var board = new noticeBoardObj(50, 150);
-var papers = [new paperObj(710, 240)];
-var nails = [new nailObj(740, 250)];
+var papers = [new paperObj(710, 240), new paperObj(710, 535), new paperObj(25, 350)];
+var nails = [new nailObj(740, 250), new nailObj(740, 545), new nailObj(55, 360), 
+             new nailObj(160, 160), new nailObj(190, 160), new nailObj(160, 640), new nailObj(190, 640), 
+             new nailObj(610, 160), new nailObj(640, 160), new nailObj(610, 640), new nailObj(640, 640)];
 var snakes = [];
 var beetles = [];
 var skulls = [];
 var health = new healthObj();
 var ammo = new ammoObj();
+var ammoInstr = new ammoObj();
+var doubleDamage = new powerUpObj(397, 394);
 var clouds = [];
 var xWalls = 0;
 var yWalls = 0;
@@ -1032,18 +1224,19 @@ var pillars = [];
 var pits = [];
 var doors = [];
 var keyArray = [];
+var grasses = [];
 var bullets = [new bulletObj(), new bulletObj(), 
                new bulletObj(), new bulletObj(), 
                new bulletObj(), new bulletObj(), 
                new bulletObj(), new bulletObj(), 
                new bulletObj(), new bulletObj(), 
                new bulletObj(), new bulletObj()];
-var fireballs = [new fireballObj(), new fireballObj(),
-                 new fireballObj(), new fireballObj(),
-                 new fireballObj(), new fireballObj(),
-                 new fireballObj(), new fireballObj(),
-                 new fireballObj(), new fireballObj(),
-                 new fireballObj(), new fireballObj()];
+var bulletsInstr = [new bulletObj(), new bulletObj(), 
+                    new bulletObj(), new bulletObj(), 
+                    new bulletObj(), new bulletObj(), 
+                    new bulletObj(), new bulletObj(), 
+                    new bulletObj(), new bulletObj(), 
+                    new bulletObj(), new bulletObj()];
 var tilePitsX = 0;
 var tilePitsY = 0;
 var tileDoorsX = 0;
@@ -1058,20 +1251,34 @@ var botLeftTile = ' ';
 var topleftTile = ' ';
 var currFrameCount = 0;
 var bulletIndex = 0;
+var bulletIndexInstr = 0;
 var fireballIndex = 0;
 var score = 0;
 var invulnerable = -100;
+var load = -100;
 var reloading = 0;
+var totalDead = 0;
 
-var level1 = 0;
+var enemies = 0;
+var roomToLoad = 0;
+var nextRoom = 1;
 
 var testFrame = 0;
 
 function mouseClicked() {
-    if ((mouseX >= 320 && mouseX <= 445 && mouseY >= 412 && mouseY <= 430) && gameStart === 0) { //go to instruction screen from home screen
+    if (mouseX >= 525 && mouseX <= 725 && mouseY >= 540 && mouseY <= 683 && gameStart === 0) { //go to instruction screen from home screen
         gameStart = 2;
+        snake.health = 2;
+        skull.health = 4;
+        beetle.health = 6;
+        ammoInstr.ammo = 12;
+        bulletIndexInstr = 0;
+
+        for (var b = 0; b < bulletsInstr.length; b++) {
+            bulletsInstr[b].fire = 0;
+        }
     }
-    else if (mouseX >= 320 && mouseX <= 370 && mouseY >= 380 && mouseY <= 400 && gameStart === 0) { //go to game screen from home screen
+    else if (((mouseX >= 300 && mouseX <= 500 && mouseY >= 450 && mouseY <= 700) || sqrt((mouseX - 400)*(mouseX - 400) + (mouseY - 450)*(mouseY - 450)) < 100) && gameStart === 0) { //go to game screen from home screen
         gameStart = 1;
     }
     else if ((mouseX >= 35 && mouseX <= 90 && mouseY >= 755 && mouseY <= 775) && gameStart === 2) { //go to home screen from instruction screen
@@ -1080,7 +1287,7 @@ function mouseClicked() {
 };
 
 function mousePressed() {
-    if (gameStart === 1 && bulletIndex < 12) {
+    if ((gameStart === 1 || gameStart === 2) && bulletIndex < 12 && bulletIndexInstr < 12) {
         checkFire();
     }
 };
@@ -1324,6 +1531,18 @@ fireballObj.prototype.checkCollision = function(object) {
     }
 }; //bullet collions
 
+fireballObj.prototype.checkBall = function(object) {
+    object.fireballs[object.fireballIndex].fire = 1;
+    object.fireballs[object.fireballIndex].firstDraw = 0;
+    object.fireballs[object.fireballIndex].x = object.xReal;
+    object.fireballs[object.fireballIndex].y = object.yReal;
+    object.fireballIndex++;
+
+    if (object.fireballIndex > 5) {
+        object.fireballIndex = 0;
+    }
+}; //reused fire code from enchanted fruit project
+
 pitObj.prototype.checkPits = function(tileTop, tileRight, tileBot, tileLeft, tileTopLeft, tileTopRight, tileBotRight, tileBotLeft) {
     if (tileTop === 'f' && tileRight === 'f' && tileBot === 'f' && tileLeft === 'f') { //all pits
         if (tileTopLeft === 'f') {
@@ -1433,16 +1652,16 @@ pitObj.prototype.checkPits = function(tileTop, tileRight, tileBot, tileLeft, til
 }; //logic for having pits fit together and cleaning up corner connections
 
 doorObj.prototype.checkOpening = function(tileTop, tileRight, tileBot, tileLeft) {
-    if (tileTop === 'w' || tileTop === 'v') {
+    if (tileTop === 'w' || tileTop === 'v' || tileTop === 'l') {
         this.opening = 0;
     }
-    else if (tileRight === 'w' || tileRight === 'v') {
+    else if (tileRight === 'w' || tileRight === 'v' || tileRight === 'l') {
         this.opening = 1;
     }
-    else if (tileBot === 'w' || tileBot === 'v') {
+    else if (tileBot === 'w' || tileBot === 'v' || tileBot === 'l') {
         this.opening = 2;
     }
-    else if (tileLeft === 'w' || tileLeft === 'v') {
+    else if (tileLeft === 'w' || tileLeft === 'v' || tileLeft === 'l') {
         this.opening = 3;
     }
 }; //logic for drawing doors in correct places
@@ -1530,6 +1749,18 @@ playerObj.prototype.checkCollision = function(object) {
             invulnerable = frameCount;
         }
         object.fire = 0;
+
+        if (object.door === 1) {
+            if (enemies === totalDead && (load < frameCount - 60) && (nextRoom !== 6 || doubleDamage.got === 1)) {
+                roomToLoad = nextRoom;
+                nextRoom++;
+                load = frameCount;
+            }
+        }
+
+        if (object.pickUp === 1) {
+            object.got = 1;
+        }
     }
     else if (colDir === "BOTTOM") {
         if ((object.enemy === 1 || object.pit === 10 || object.enemy === 2 || object.enemy === 3) && (invulnerable < frameCount - 60)) {
@@ -1538,6 +1769,18 @@ playerObj.prototype.checkCollision = function(object) {
             this.hit = 1;
         }
         object.fire = 0;
+
+        if (object.door === 1) {
+            if (enemies === totalDead && (load < frameCount - 60) && (nextRoom !== 6 || doubleDamage.got === 1)) {
+                roomToLoad = nextRoom;
+                nextRoom++;
+                load = frameCount;
+            }
+        }
+
+        if (object.pickUp === 1) {
+            object.got = 1;
+        }
     }
     else if (colDir === "RIGHT") {
         if ((object.enemy === 1 || object.pit === 10 || object.enemy === 2 || object.enemy === 3) && (invulnerable < frameCount - 60)) {
@@ -1545,6 +1788,18 @@ playerObj.prototype.checkCollision = function(object) {
             invulnerable = frameCount;
         }  
         object.fire = 0;  
+
+        if (object.door === 1) {
+            if (enemies === totalDead && (load < frameCount - 60) && (nextRoom !== 6 || doubleDamage.got === 1)) {
+                roomToLoad = nextRoom;
+                nextRoom++;
+                load = frameCount;
+            }
+        }
+
+        if (object.pickUp === 1) {
+            object.got = 1;
+        }
     }
     else if (colDir === "LEFT") {
         if ((object.enemy === 1 || object.pit === 10 || object.enemy === 2 || object.enemy === 3) && (invulnerable < frameCount - 60)) {
@@ -1552,6 +1807,18 @@ playerObj.prototype.checkCollision = function(object) {
             invulnerable = frameCount;
         }    
         object.fire = 0;
+
+        if (object.door === 1) {
+            if (enemies === totalDead && (load < frameCount - 60) && (nextRoom !== 6 || doubleDamage.got === 1)) {
+                roomToLoad = nextRoom;
+                nextRoom++;
+                load = frameCount;
+            }
+        }
+
+        if (object.pickUp === 1) {
+            object.got = 1;
+        }
     }
 
     if (this.health <= 0) {
@@ -1691,28 +1958,48 @@ bulletObj.prototype.checkCollision = function(object) {
     if (colDir === "TOP") {
         this.fire = 0;
         if (object.seen === 0) {
-            object.health--;
+            if (this.type === 0) {
+                object.health--;
+            }
+            else {
+                object.health -= 2;
+            }
         }
         this.firstDraw = 0;
     }
     else if (colDir === "BOTTOM") {
         this.fire = 0;  
         if (object.seen === 0) {
-            object.health--;
+            if (this.type === 0) {
+                object.health--;
+            }
+            else {
+                object.health -= 2;
+            }
         }   
         this.firstDraw = 0;  
     }
     else if (colDir === "RIGHT") {
         this.fire = 0;  
         if (object.seen === 0) {
-            object.health--;
+            if (this.type === 0) {
+                object.health--;
+            }
+            else {
+                object.health -= 2;
+            }
         } 
         this.firstDraw = 0;  
     }
     else if (colDir === "LEFT") {
         this.fire = 0;  
         if (object.seen === 0) {
-            object.health--;
+            if (this.type === 0) {
+                object.health--;
+            }
+            else {
+                object.health -= 2;
+            }
         }   
         this.firstDraw = 0;  
     }
@@ -1723,69 +2010,223 @@ healthObj.prototype.updateHealth = function(object) {
 };
 
 ammoObj.prototype.reloadAnim = function() {
-    ammo.ammo = 0;
-    bulletIndex = 12;
-    fill(255,255,255);
-    rect(this.x - 2, this.y - 1, this.w, 17);
+    if (gameStart === 1) {
+        this.ammo = 0;
+        bulletIndex = 12;
+        fill(255,255,255);
+        rect(this.x - 2, this.y - 1, this.w, 17);
 
-    this.w -= 6;
+        this.w -= 6;
 
-    if (this.w <= 0) {
-        bulletIndex = 0;
-        ammo.ammo = 12;
-        this.w = 144;
-        reloading = 0;
+        if (this.w <= 0) {
+            bulletIndex = 0;
+            this.ammo = 12;
+            this.w = 144;
+            reloading = 0;
+        }
+    }
+    else if (gameStart === 2) {
+        this.ammo = 0;
+        bulletIndexInstr = 12;
+        fill(255,255,255);
+        rect(this.x - 2, this.y - 1, this.w, 17);
+
+        this.w -= 6;
+
+        if (this.w <= 0) {
+            bulletIndexInstr = 0;
+            this.ammo = 12;
+            this.w = 144;
+            reloading = 0;
+        }
     }
 };
 
 var checkFire = function() {
-    bullets[bulletIndex].fire = 1;
-    bullets[bulletIndex].firstDraw = 0;
-    bullets[bulletIndex].x = pistol.xReal;
-    bullets[bulletIndex].y = pistol.yReal;
-    bulletIndex++;
-    ammo.ammo -= 1;
-}; //reused fire code from enchanted fruit project
-
-var checkBall = function(object) {
-    fireballs[fireballIndex].fire = 1;
-    fireballs[fireballIndex].firstDraw = 0;
-    fireballs[fireballIndex].x = object.xReal;
-    fireballs[fireballIndex].y = object.yReal;
-    fireballIndex++;
-
-    if (fireballIndex > 5) {
-        fireballIndex = 0;
+    if (gameStart === 1) {
+        bullets[bulletIndex].fire = 1;
+        bullets[bulletIndex].firstDraw = 0;
+        bullets[bulletIndex].x = pistol.xReal;
+        bullets[bulletIndex].y = pistol.yReal;
+        bullets[bulletIndex].type = pistol.type;
+        bulletIndex++;
+        ammo.ammo -= 1;
+    }
+    else if (gameStart === 2) {
+        bulletsInstr[bulletIndexInstr].fire = 1;
+        bulletsInstr[bulletIndexInstr].firstDraw = 0;
+        bulletsInstr[bulletIndexInstr].x = pistolInstr.xReal;
+        bulletsInstr[bulletIndexInstr].y = pistolInstr.yReal;
+        bulletIndexInstr++;
+        ammoInstr.ammo -= 1;
     }
 }; //reused fire code from enchanted fruit project
 
-var tileMapLv1 = [
-    "bbbbbbbbbbbbbbbbbbbb",
+var tileMapRm1 = [
+    "bbbbbbbbbvvbbbbbbbbb",
     "b                  b",
-    "b             ffff b",
-    "b  ff       f    f b",
-    "b  ff       f s  f b",
-    "b           f    f b",
-    "b       h   ffff   b",
+    "b              h   b",
+    "b         h        b",
+    "b  h               b",
+    "b                  b",
+    "b             h    b",
+    "b     h            b",
     "b                  b",
     "b                  b",
-    "w     ffff         v",
-    "w     ffff         v",
-    "b     ffff   h     b",
-    "b     ffff         b",
     "b                  b",
-    "b    e             b",
-    "bf             fff b",
-    "bf               f b",
-    "bf             f ffb",
-    "bf          ffff  fb",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b                  b",
     "bbbbbbbbbbbbbbbbbbbb",
     ]; //tilemap generated from bitmap using custom python script
 
-var initTilemapLv1 = function() {
-    for (var i = 0; i< tileMapLv1.length; i++) {
-        for (var j =0; j < tileMapLv1[i].length; j++) {
-            switch (tileMapLv1[i][j]) {
+var tileMapRm2 = [
+    "bbbbbbbbbbbbbbbbbbbb",
+    "b                  b",
+    "b                  b",
+    "b  fffff           b",
+    "b  fffff           b",
+    "b  ff    e         b",
+    "b  ff              b",
+    "b  ff              b",
+    "b           e      b",
+    "b                  v",
+    "b                  v",
+    "b                  b",
+    "b       e      ff  b",
+    "b              ff  b",
+    "b              ff  b",
+    "b           fffff  b",
+    "b           fffff  b",
+    "b                  b",
+    "b                  b",
+    "bbbbbbbbbbbbbbbbbbbb",
+    ];
+
+var tileMapRm3 = [
+    "bbbbbbbbbvvbbbbbbbbb",
+    "b                 sb",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b           s fffffb",
+    "b             f   fb",
+    "b             f   fb",
+    "b             f   fb",
+    "b             f   fb",
+    "b             f   fb",
+    "b             f   fb",
+    "b           s fffffb",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b                  b",
+    "b                 sb",
+    "bbbbbbbbbbbbbbbbbbbb",
+    ];
+
+var tileMapRm4 = [
+    "bbbbbbbbbvvbbbbbbbbb",
+    "b                  b",
+    "b       f          b",
+    "b     fff    ffff  b",
+    "b  ffff   s     f  b",
+    "b  f h        h f  b",
+    "b               f  b",
+    "b            ffff  b",
+    "b       e          b",
+    "b                  b",
+    "b  fff             b",
+    "b    fff  h        b",
+    "b      f     e     b",
+    "b    h ff          b",
+    "b                  b",
+    "b               f  b",
+    "b              sf  b",
+    "b             fff  b",
+    "b                  b",
+    "bbbbbbbbbbbbbbbbbbbb",
+    ];
+
+var tileMapRm5 = [
+    "bbbbbbbbbbbbbbbbbbbb",
+    "b                  b",
+    "b                  b",
+    "b       ff e       b",
+    "b     fffff    e   b",
+    "b    ef e fff      b",
+    "b     f        f   b",
+    "b  ffff    e   f   b",
+    "b   ff       fff   b",
+    "b   f        f     v",
+    "b  ff  e     ff    v",
+    "b  f          ff   b",
+    "b             f    b",
+    "b    f      eff    b",
+    "b    f e     f  e  b",
+    "b    ff      f     b",
+    "b     ff e   ff    b",
+    "b      ff          b",
+    "b                  b",
+    "bbbbbbbbbbbbbbbbbbbb",
+    ];
+
+var tileMapRm6 = [
+    "bbbbbbbbbbbbbbbbbbbb",
+    "bsfffffffssfffffffsb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "b                  w",
+    "b                  w",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bffffffffffffffffffb",
+    "bsfffffffssfffffffsb",
+    "bbbbbbbbbbbbbbbbbbbb",
+    ];
+
+var tileMapBoss1 = [
+    "bbbbbbbbbbbbbbbbbbbb",
+    "b              h h b",
+    "b             h h hb",
+    "b              h h b",
+    "b             h h hb",
+    "b              h h b",
+    "b             h h hb",
+    "b              h h b",
+    "b             h h hb",
+    "b              h h l",
+    "b             h h hl",
+    "b              h h b",
+    "b             h h hb",
+    "b              h h b",
+    "b             h h hb",
+    "b              h h b",
+    "b             h h hb",
+    "b              h h b",
+    "b             h h hb",
+    "bbbbbbbbbbbbbbbbbbbb",
+    ];
+
+var initTilemapRm1 = function() {
+    for (var i = 0; i< tileMapRm1.length; i++) {
+        for (var j =0; j < tileMapRm1[i].length; j++) {
+            switch (tileMapRm1[i][j]) {
                 case 'b': walls.push(new wallObj(j*40, i*40));
                     break;
                 case 'f': pits.push(new pitObj(j*40, i*40, i, j));
@@ -1796,19 +2237,276 @@ var initTilemapLv1 = function() {
                     break;
                 case 'v': doors.push(new doorObj(j*40, i*40, 1, i, j));
                     break;
+                case 'l': doors.push(new doorObj(j*40, i*40, 2, i, j));
+                    break;
                 case 'h': snakes.push(new snakeObj(j*40, i*40, round(random(0, 2))));
                     grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
                     break;
                 case 'e': beetles.push(new beetleObj(j*40, i*40, random(-0.5, 0.5), random(-0.5, 0.5)));
                     grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
                     break;
                 case 's': skulls.push(new skullObj(j*40, i*40));
                     grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
                     break;
             }
         }
     }
-    level1 = 1;
+    roomToLoad = -1;
+}; //game tilemap initialization
+
+var initTilemapRm2 = function() {
+    walls = [];
+    pits = [];
+    grounds = [];
+    doors = [];
+    snakes = [];
+    beetles = [];
+    skulls = [];
+    enemies = 0;
+    for (var i = 0; i< tileMapRm2.length; i++) {
+        for (var j =0; j < tileMapRm2[i].length; j++) {
+            switch (tileMapRm2[i][j]) {
+                case 'b': walls.push(new wallObj(j*40, i*40));
+                    break;
+                case 'f': pits.push(new pitObj(j*40, i*40, i, j));
+                    break;
+                case ' ': grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    break;
+                case 'w': doors.push(new doorObj(j*40, i*40, 0, i, j));
+                    break;
+                case 'v': doors.push(new doorObj(j*40, i*40, 1, i, j));
+                    break;
+                case 'l': doors.push(new doorObj(j*40, i*40, 2, i, j));
+                    break;
+                case 'h': snakes.push(new snakeObj(j*40, i*40, round(random(0, 2))));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 'e': beetles.push(new beetleObj(j*40, i*40, random(-0.5, 0.5), random(-0.5, 0.5)));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 's': skulls.push(new skullObj(j*40, i*40));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+            }
+        }
+    }
+    roomToLoad = -1;
+}; //game tilemap initialization
+
+var initTilemapRm3 = function() {
+    walls = [];
+    pits = [];
+    grounds = [];
+    doors = [];
+    snakes = [];
+    beetles = [];
+    skulls = [];
+    enemies = 0;
+    for (var i = 0; i< tileMapRm3.length; i++) {
+        for (var j =0; j < tileMapRm3[i].length; j++) {
+            switch (tileMapRm3[i][j]) {
+                case 'b': walls.push(new wallObj(j*40, i*40));
+                    break;
+                case 'f': pits.push(new pitObj(j*40, i*40, i, j));
+                    break;
+                case ' ': grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    break;
+                case 'w': doors.push(new doorObj(j*40, i*40, 0, i, j));
+                    break;
+                case 'v': doors.push(new doorObj(j*40, i*40, 1, i, j));
+                    break;
+                case 'l': doors.push(new doorObj(j*40, i*40, 2, i, j));
+                    break;
+                case 'h': snakes.push(new snakeObj(j*40, i*40, round(random(0, 2))));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 'e': beetles.push(new beetleObj(j*40, i*40, random(-0.5, 0.5), random(-0.5, 0.5)));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 's': skulls.push(new skullObj(j*40, i*40));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+            }
+        }
+    }
+    roomToLoad = -1;
+}; //game tilemap initialization
+
+var initTilemapRm4 = function() {
+    walls = [];
+    pits = [];
+    grounds = [];
+    doors = [];
+    snakes = [];
+    beetles = [];
+    skulls = [];
+    enemies = 0;
+    for (var i = 0; i< tileMapRm4.length; i++) {
+        for (var j =0; j < tileMapRm4[i].length; j++) {
+            switch (tileMapRm4[i][j]) {
+                case 'b': walls.push(new wallObj(j*40, i*40));
+                    break;
+                case 'f': pits.push(new pitObj(j*40, i*40, i, j));
+                    break;
+                case ' ': grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    break;
+                case 'w': doors.push(new doorObj(j*40, i*40, 0, i, j));
+                    break;
+                case 'v': doors.push(new doorObj(j*40, i*40, 1, i, j));
+                    break;
+                case 'l': doors.push(new doorObj(j*40, i*40, 2, i, j));
+                    break;
+                case 'h': snakes.push(new snakeObj(j*40, i*40, round(random(0, 2))));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 'e': beetles.push(new beetleObj(j*40, i*40, random(-0.5, 0.5), random(-0.5, 0.5)));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 's': skulls.push(new skullObj(j*40, i*40));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+            }
+        }
+    }
+    roomToLoad = -1;
+}; //game tilemap initialization
+
+var initTilemapRm5 = function() {
+    walls = [];
+    pits = [];
+    grounds = [];
+    doors = [];
+    snakes = [];
+    beetles = [];
+    skulls = [];
+    enemies = 0;
+    for (var i = 0; i< tileMapRm5.length; i++) {
+        for (var j =0; j < tileMapRm5[i].length; j++) {
+            switch (tileMapRm5[i][j]) {
+                case 'b': walls.push(new wallObj(j*40, i*40));
+                    break;
+                case 'f': pits.push(new pitObj(j*40, i*40, i, j));
+                    break;
+                case ' ': grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    break;
+                case 'w': doors.push(new doorObj(j*40, i*40, 0, i, j));
+                    break;
+                case 'v': doors.push(new doorObj(j*40, i*40, 1, i, j));
+                    break;
+                case 'l': doors.push(new doorObj(j*40, i*40, 2, i, j));
+                    break;
+                case 'h': snakes.push(new snakeObj(j*40, i*40, round(random(0, 2))));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 'e': beetles.push(new beetleObj(j*40, i*40, random(-0.5, 0.5), random(-0.5, 0.5)));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 's': skulls.push(new skullObj(j*40, i*40));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+            }
+        }
+    }
+    roomToLoad = -1;
+}; //game tilemap initialization
+
+var initTilemapRm6 = function() {
+    walls = [];
+    pits = [];
+    grounds = [];
+    doors = [];
+    snakes = [];
+    beetles = [];
+    skulls = [];
+    enemies = 0;
+    for (var i = 0; i< tileMapRm1.length; i++) {
+        for (var j =0; j < tileMapRm6[i].length; j++) {
+            switch (tileMapRm6[i][j]) {
+                case 'b': walls.push(new wallObj(j*40, i*40));
+                    break;
+                case 'f': pits.push(new pitObj(j*40, i*40, i, j));
+                    break;
+                case ' ': grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    break;
+                case 'w': doors.push(new doorObj(j*40, i*40, 0, i, j));
+                    break;
+                case 'v': doors.push(new doorObj(j*40, i*40, 1, i, j));
+                    break;
+                case 'l': doors.push(new doorObj(j*40, i*40, 2, i, j));
+                    break;
+                case 'h': snakes.push(new snakeObj(j*40, i*40, round(random(0, 2))));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 'e': beetles.push(new beetleObj(j*40, i*40, random(-0.5, 0.5), random(-0.5, 0.5)));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 's': skulls.push(new skullObj(j*40, i*40));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+            }
+        }
+    }
+    roomToLoad = -1;
+}; //game tilemap initialization
+
+var initTilemapBoss1 = function() {
+    walls = [];
+    pits = [];
+    grounds = [];
+    doors = [];
+    snakes = [];
+    beetles = [];
+    skulls = [];
+    enemies = 0;
+    for (var i = 0; i< tileMapBoss1.length; i++) {
+        for (var j =0; j < tileMapBoss1[i].length; j++) {
+            switch (tileMapBoss1[i][j]) {
+                case 'b': walls.push(new wallObj(j*40, i*40));
+                    break;
+                case 'f': pits.push(new pitObj(j*40, i*40, i, j));
+                    break;
+                case ' ': grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    break;
+                case 'w': doors.push(new doorObj(j*40, i*40, 0, i, j));
+                    break;
+                case 'v': doors.push(new doorObj(j*40, i*40, 1, i, j));
+                    break;
+                case 'l': doors.push(new doorObj(j*40, i*40, 2, i, j));
+                    break;
+                case 'h': snakes.push(new snakeObj(j*40, i*40, round(random(0, 2))));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 'e': beetles.push(new beetleObj(j*40, i*40, random(-0.5, 0.5), random(-0.5, 0.5)));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+                case 's': skulls.push(new skullObj(j*40, i*40));
+                    grounds.push(new groundObj(j*40, i*40, round(random(0, 3))));
+                    enemies++;
+                    break;
+            }
+        }
+    }
+    roomToLoad = -1;
 }; //game tilemap initialization
 
 function preload() {
@@ -1825,10 +2523,9 @@ function setup() {
         clouds.push(new cloudObj(random(-50, 850), random(-50, 850)));
     }
 
-    for (var j = 0; j < snakes.length; j++) {
-        snakes[j].speedX = random(-2, 2);
-        snakes[j].speedY = random(-2, 2);
-    }
+    for (var i = 0; i < 50; i++) {
+        grasses.push(new grassObj(round(random(0, 800)), round(random(710, 800)))); 
+    };
 }
   
 function draw() {
@@ -1840,43 +2537,51 @@ function draw() {
             clouds[i].move();
         }
 
+        temple.draw();
+
         fill(0, 0, 0);
         textSize(40);
-        text("Tomb Traverser", 200, 200);
-        textSize(25);
-        text("Start\nInstructions", 320, 400);
+        text("Tomb Traverser", 200, 80);
+        textSize(20);
+        text("Instructions", 540, 620);
+
+        fill(255,0,0);
+        text("Enter", 365, 550);
+
+        fill(0,0,0);
 
         textSize(15);
-        text("Created by: TJ Koonce", 320, 750);
+        text("Created by: TJ Koonce", 0, 790);
 
-        if (mouseX >= 320 && mouseX <= 370 && mouseY >= 380 && mouseY <= 400) {
-            fill(0, 0, 0);
-            triangle(290, 380, 315, 390, 290, 400);
+        if ((mouseX >= 300 && mouseX <= 500 && mouseY >= 450 && mouseY <= 700) || sqrt((mouseX - 400)*(mouseX - 400) + (mouseY - 450)*(mouseY - 450)) < 100) {
+            fill(255,0,0);
+            rect(365, 552, 80, 1);
         }
-        else if (mouseX >= 320 && mouseX <= 445 && mouseY >= 412 && mouseY <= 430) {
+        else if (mouseX >= 525 && mouseX <= 725 && mouseY >= 540 && mouseY <= 683) {
             fill(0, 0, 0);
-            triangle(290, 410, 315, 420, 290, 430);
+            rect(540, 622, 177, 1);
         }
     }
     else if (gameStart === 1) {
         noStroke();
-        if (level1 === 0) {
-            initTilemapLv1();
+
+        if (roomToLoad === 0) {
+            initTilemapRm1();
 
             for (var i = 0; i < pits.length; i++) {
                 tilePitsX = pits[i].tilemapX;
                 tilePitsY = pits[i].tilemapY;
 
-                topLeftTile = tileMapLv1[ (tilePitsX - 1) ][ (tilePitsY - 1) ]; //using tilemap arrauy to determine each kind of tile around pit for correct drawing
-                topTile = tileMapLv1[ (tilePitsX - 1) ][ (tilePitsY) ];
-                topRightTile = tileMapLv1[ (tilePitsX - 1) ][ (tilePitsY + 1) ];
+                topLeftTile = tileMapRm1[ (tilePitsX - 1) ][ (tilePitsY - 1) ]; //using tilemap array to determine each kind of tile around pit for correct drawing
+                topTile = tileMapRm1[ (tilePitsX - 1) ][ (tilePitsY) ];
+                topRightTile = tileMapRm1[ (tilePitsX - 1) ][ (tilePitsY + 1) ];
 
-                botLeftTile = tileMapLv1[ (tilePitsX + 1) ][ (tilePitsY - 1) ];
-                botTile = tileMapLv1[ (tilePitsX + 1) ][ (tilePitsY) ];
-                botRightTile = tileMapLv1[ (tilePitsX + 1) ][ (tilePitsY + 1) ];
+                botLeftTile = tileMapRm1[ (tilePitsX + 1) ][ (tilePitsY - 1) ];
+                botTile = tileMapRm1[ (tilePitsX + 1) ][ (tilePitsY) ];
+                botRightTile = tileMapRm1[ (tilePitsX + 1) ][ (tilePitsY + 1) ];
 
-                leftTile = tileMapLv1[ (tilePitsX) ][ (tilePitsY - 1) ];
-                rightTile = tileMapLv1[ (tilePitsX) ][ (tilePitsY + 1) ];
+                leftTile = tileMapRm1[ (tilePitsX) ][ (tilePitsY - 1) ];
+                rightTile = tileMapRm1[ (tilePitsX) ][ (tilePitsY + 1) ];
 
                 pits[i].checkPits(topTile, rightTile, botTile, leftTile, topLeftTile, topRightTile, botRightTile, botLeftTile);
             }
@@ -1889,28 +2594,406 @@ function draw() {
                     topTile = ' ';
                 }
                 else {
-                    topTile = tileMapLv1[ (doors[i].tilemapX - 1) ][ (doors[i].tilemapY) ];
+                    topTile = tileMapRm1[ (doors[i].tilemapX - 1) ][ (doors[i].tilemapY) ];
                 }
 
                 if (tileDoorsX === 19) {
                     botTile = ' ';
                 }
                 else {
-                    botTile = tileMapLv1[ (doors[i].tilemapX + 1) ][ (doors[i].tilemapY) ];
+                    botTile = tileMapRm1[ (doors[i].tilemapX + 1) ][ (doors[i].tilemapY) ];
                 }
 
                 if (tileDoorsY === 0) {
                     leftTile = ' ';
                 }
                 else {
-                    leftTile = tileMapLv1[ (doors[i].tilemapX) ][ (doors[i].tilemapY - 1) ];
+                    leftTile = tileMapRm1[ (doors[i].tilemapX) ][ (doors[i].tilemapY - 1) ];
                 }
 
                 if (tileDoorsY === 19) {
                     rightTile = ' ';
                 }
                 else {
-                    rightTile = tileMapLv1[ (doors[i].tilemapX) ][ (doors[i].tilemapY + 1) ];
+                    rightTile = tileMapRm1[ (doors[i].tilemapX) ][ (doors[i].tilemapY + 1) ];
+                }
+
+                doors[i].checkOpening(topTile, rightTile, botTile, leftTile);  
+            }
+        }
+
+        if (roomToLoad === 1) {
+            initTilemapRm2();
+            player.y = 720;
+            pistol.y = 720;
+
+            for (var b = 0; b < bullets.length; b++) {
+                bullets[b].fire = 0;
+            }
+
+            for (var i = 0; i < pits.length; i++) {
+                tilePitsX = pits[i].tilemapX;
+                tilePitsY = pits[i].tilemapY;
+
+                topLeftTile = tileMapRm2[ (tilePitsX - 1) ][ (tilePitsY - 1) ]; //using tilemap array to determine each kind of tile around pit for correct drawing
+                topTile = tileMapRm2[ (tilePitsX - 1) ][ (tilePitsY) ];
+                topRightTile = tileMapRm2[ (tilePitsX - 1) ][ (tilePitsY + 1) ];
+
+                botLeftTile = tileMapRm2[ (tilePitsX + 1) ][ (tilePitsY - 1) ];
+                botTile = tileMapRm2[ (tilePitsX + 1) ][ (tilePitsY) ];
+                botRightTile = tileMapRm2[ (tilePitsX + 1) ][ (tilePitsY + 1) ];
+
+                leftTile = tileMapRm2[ (tilePitsX) ][ (tilePitsY - 1) ];
+                rightTile = tileMapRm2[ (tilePitsX) ][ (tilePitsY + 1) ];
+
+                pits[i].checkPits(topTile, rightTile, botTile, leftTile, topLeftTile, topRightTile, botRightTile, botLeftTile);
+            }
+
+            for (var i = 0; i < doors.length; i++) {
+                tileDoorsX = doors[i].tilemapX;
+                tileDoorsY = doors[i].tilemapY;
+
+                if (tileDoorsX === 0) { //using logic to determine if tile we want to check is within tilemap
+                    topTile = ' ';
+                }
+                else {
+                    topTile = tileMapRm2[ (doors[i].tilemapX - 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsX === 19) {
+                    botTile = ' ';
+                }
+                else {
+                    botTile = tileMapRm2[ (doors[i].tilemapX + 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsY === 0) {
+                    leftTile = ' ';
+                }
+                else {
+                    leftTile = tileMapRm2[ (doors[i].tilemapX) ][ (doors[i].tilemapY - 1) ];
+                }
+
+                if (tileDoorsY === 19) {
+                    rightTile = ' ';
+                }
+                else {
+                    rightTile = tileMapRm2[ (doors[i].tilemapX) ][ (doors[i].tilemapY + 1) ];
+                }
+
+                doors[i].checkOpening(topTile, rightTile, botTile, leftTile);  
+            }
+        }
+
+        if (roomToLoad === 2) {
+            initTilemapRm3();
+            player.x = 40;
+            pistol.x = 40;
+
+            for (var b = 0; b < bullets.length; b++) {
+                bullets[b].fire = 0;
+            }
+
+            for (var i = 0; i < pits.length; i++) {
+                tilePitsX = pits[i].tilemapX;
+                tilePitsY = pits[i].tilemapY;
+
+                topLeftTile = tileMapRm3[ (tilePitsX - 1) ][ (tilePitsY - 1) ]; //using tilemap array to determine each kind of tile around pit for correct drawing
+                topTile = tileMapRm3[ (tilePitsX - 1) ][ (tilePitsY) ];
+                topRightTile = tileMapRm3[ (tilePitsX - 1) ][ (tilePitsY + 1) ];
+
+                botLeftTile = tileMapRm3[ (tilePitsX + 1) ][ (tilePitsY - 1) ];
+                botTile = tileMapRm3[ (tilePitsX + 1) ][ (tilePitsY) ];
+                botRightTile = tileMapRm3[ (tilePitsX + 1) ][ (tilePitsY + 1) ];
+
+                leftTile = tileMapRm3[ (tilePitsX) ][ (tilePitsY - 1) ];
+                rightTile = tileMapRm3[ (tilePitsX) ][ (tilePitsY + 1) ];
+
+                pits[i].checkPits(topTile, rightTile, botTile, leftTile, topLeftTile, topRightTile, botRightTile, botLeftTile);
+            }
+
+            for (var i = 0; i < doors.length; i++) {
+                tileDoorsX = doors[i].tilemapX;
+                tileDoorsY = doors[i].tilemapY;
+
+                if (tileDoorsX === 0) { //using logic to determine if tile we want to check is within tilemap
+                    topTile = ' ';
+                }
+                else {
+                    topTile = tileMapRm3[ (doors[i].tilemapX - 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsX === 19) {
+                    botTile = ' ';
+                }
+                else {
+                    botTile = tileMapRm3[ (doors[i].tilemapX + 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsY === 0) {
+                    leftTile = ' ';
+                }
+                else {
+                    leftTile = tileMapRm3[ (doors[i].tilemapX) ][ (doors[i].tilemapY - 1) ];
+                }
+
+                if (tileDoorsY === 19) {
+                    rightTile = ' ';
+                }
+                else {
+                    rightTile = tileMapRm3[ (doors[i].tilemapX) ][ (doors[i].tilemapY + 1) ];
+                }
+
+                doors[i].checkOpening(topTile, rightTile, botTile, leftTile);  
+            }
+        }
+
+        if (roomToLoad === 3) {
+            initTilemapRm4();
+            player.y = 720;
+            pistol.x = 720;
+
+            for (var b = 0; b < bullets.length; b++) {
+                bullets[b].fire = 0;
+            }
+
+            for (var i = 0; i < pits.length; i++) {
+                tilePitsX = pits[i].tilemapX;
+                tilePitsY = pits[i].tilemapY;
+
+                topLeftTile = tileMapRm4[ (tilePitsX - 1) ][ (tilePitsY - 1) ]; //using tilemap array to determine each kind of tile around pit for correct drawing
+                topTile = tileMapRm4[ (tilePitsX - 1) ][ (tilePitsY) ];
+                topRightTile = tileMapRm4[ (tilePitsX - 1) ][ (tilePitsY + 1) ];
+
+                botLeftTile = tileMapRm4[ (tilePitsX + 1) ][ (tilePitsY - 1) ];
+                botTile = tileMapRm4[ (tilePitsX + 1) ][ (tilePitsY) ];
+                botRightTile = tileMapRm4[ (tilePitsX + 1) ][ (tilePitsY + 1) ];
+
+                leftTile = tileMapRm4[ (tilePitsX) ][ (tilePitsY - 1) ];
+                rightTile = tileMapRm4[ (tilePitsX) ][ (tilePitsY + 1) ];
+
+                pits[i].checkPits(topTile, rightTile, botTile, leftTile, topLeftTile, topRightTile, botRightTile, botLeftTile);
+            }
+
+            for (var i = 0; i < doors.length; i++) {
+                tileDoorsX = doors[i].tilemapX;
+                tileDoorsY = doors[i].tilemapY;
+
+                if (tileDoorsX === 0) { //using logic to determine if tile we want to check is within tilemap
+                    topTile = ' ';
+                }
+                else {
+                    topTile = tileMapRm4[ (doors[i].tilemapX - 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsX === 19) {
+                    botTile = ' ';
+                }
+                else {
+                    botTile = tileMapRm4[ (doors[i].tilemapX + 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsY === 0) {
+                    leftTile = ' ';
+                }
+                else {
+                    leftTile = tileMapRm4[ (doors[i].tilemapX) ][ (doors[i].tilemapY - 1) ];
+                }
+
+                if (tileDoorsY === 19) {
+                    rightTile = ' ';
+                }
+                else {
+                    rightTile = tileMapRm4[ (doors[i].tilemapX) ][ (doors[i].tilemapY + 1) ];
+                }
+
+                doors[i].checkOpening(topTile, rightTile, botTile, leftTile);  
+            }
+        }
+
+        if (roomToLoad === 4) {
+            initTilemapRm5();
+            player.y = 720;
+            pistol.x = 720;
+
+            for (var b = 0; b < bullets.length; b++) {
+                bullets[b].fire = 0;
+            }
+
+            for (var i = 0; i < pits.length; i++) {
+                tilePitsX = pits[i].tilemapX;
+                tilePitsY = pits[i].tilemapY;
+
+                topLeftTile = tileMapRm5[ (tilePitsX - 1) ][ (tilePitsY - 1) ]; //using tilemap array to determine each kind of tile around pit for correct drawing
+                topTile = tileMapRm5[ (tilePitsX - 1) ][ (tilePitsY) ];
+                topRightTile = tileMapRm5[ (tilePitsX - 1) ][ (tilePitsY + 1) ];
+
+                botLeftTile = tileMapRm5[ (tilePitsX + 1) ][ (tilePitsY - 1) ];
+                botTile = tileMapRm5[ (tilePitsX + 1) ][ (tilePitsY) ];
+                botRightTile = tileMapRm5[ (tilePitsX + 1) ][ (tilePitsY + 1) ];
+
+                leftTile = tileMapRm5[ (tilePitsX) ][ (tilePitsY - 1) ];
+                rightTile = tileMapRm5[ (tilePitsX) ][ (tilePitsY + 1) ];
+
+                pits[i].checkPits(topTile, rightTile, botTile, leftTile, topLeftTile, topRightTile, botRightTile, botLeftTile);
+            }
+
+            for (var i = 0; i < doors.length; i++) {
+                tileDoorsX = doors[i].tilemapX;
+                tileDoorsY = doors[i].tilemapY;
+
+                if (tileDoorsX === 0) { //using logic to determine if tile we want to check is within tilemap
+                    topTile = ' ';
+                }
+                else {
+                    topTile = tileMapRm5[ (doors[i].tilemapX - 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsX === 19) {
+                    botTile = ' ';
+                }
+                else {
+                    botTile = tileMapRm5[ (doors[i].tilemapX + 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsY === 0) {
+                    leftTile = ' ';
+                }
+                else {
+                    leftTile = tileMapRm5[ (doors[i].tilemapX) ][ (doors[i].tilemapY - 1) ];
+                }
+
+                if (tileDoorsY === 19) {
+                    rightTile = ' ';
+                }
+                else {
+                    rightTile = tileMapRm5[ (doors[i].tilemapX) ][ (doors[i].tilemapY + 1) ];
+                }
+
+                doors[i].checkOpening(topTile, rightTile, botTile, leftTile);  
+            }
+        }
+
+        if (roomToLoad === 5) {
+            initTilemapRm6();
+            player.x = 40;
+            pistol.x = 720;
+
+            for (var b = 0; b < bullets.length; b++) {
+                bullets[b].fire = 0;
+            }
+
+            for (var i = 0; i < pits.length; i++) {
+                tilePitsX = pits[i].tilemapX;
+                tilePitsY = pits[i].tilemapY;
+
+                topLeftTile = tileMapRm6[ (tilePitsX - 1) ][ (tilePitsY - 1) ]; //using tilemap array to determine each kind of tile around pit for correct drawing
+                topTile = tileMapRm6[ (tilePitsX - 1) ][ (tilePitsY) ];
+                topRightTile = tileMapRm6[ (tilePitsX - 1) ][ (tilePitsY + 1) ];
+
+                botLeftTile = tileMapRm6[ (tilePitsX + 1) ][ (tilePitsY - 1) ];
+                botTile = tileMapRm6[ (tilePitsX + 1) ][ (tilePitsY) ];
+                botRightTile = tileMapRm6[ (tilePitsX + 1) ][ (tilePitsY + 1) ];
+
+                leftTile = tileMapRm6[ (tilePitsX) ][ (tilePitsY - 1) ];
+                rightTile = tileMapRm6[ (tilePitsX) ][ (tilePitsY + 1) ];
+
+                pits[i].checkPits(topTile, rightTile, botTile, leftTile, topLeftTile, topRightTile, botRightTile, botLeftTile);
+            }
+
+            for (var i = 0; i < doors.length; i++) {
+                tileDoorsX = doors[i].tilemapX;
+                tileDoorsY = doors[i].tilemapY;
+
+                if (tileDoorsX === 0) { //using logic to determine if tile we want to check is within tilemap
+                    topTile = ' ';
+                }
+                else {
+                    topTile = tileMapRm6[ (doors[i].tilemapX - 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsX === 19) {
+                    botTile = ' ';
+                }
+                else {
+                    botTile = tileMapRm6[ (doors[i].tilemapX + 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsY === 0) {
+                    leftTile = ' ';
+                }
+                else {
+                    leftTile = tileMapRm6[ (doors[i].tilemapX) ][ (doors[i].tilemapY - 1) ];
+                }
+
+                if (tileDoorsY === 19) {
+                    rightTile = ' ';
+                }
+                else {
+                    rightTile = tileMapRm6[ (doors[i].tilemapX) ][ (doors[i].tilemapY + 1) ];
+                }
+
+                doors[i].checkOpening(topTile, rightTile, botTile, leftTile);  
+            }
+        }
+
+        if (roomToLoad === 6) {
+            initTilemapBoss1();
+            player.x = 40;
+            pistol.x = 720;
+
+            for (var b = 0; b < bullets.length; b++) {
+                bullets[b].fire = 0;
+            }
+
+            for (var i = 0; i < pits.length; i++) {
+                tilePitsX = pits[i].tilemapX;
+                tilePitsY = pits[i].tilemapY;
+
+                topLeftTile = tileMapBoss1[ (tilePitsX - 1) ][ (tilePitsY - 1) ]; //using tilemap array to determine each kind of tile around pit for correct drawing
+                topTile = tileMapBoss1[ (tilePitsX - 1) ][ (tilePitsY) ];
+                topRightTile = tileMapBoss1[ (tilePitsX - 1) ][ (tilePitsY + 1) ];
+
+                botLeftTile = tileMapBoss1[ (tilePitsX + 1) ][ (tilePitsY - 1) ];
+                botTile = tileMapBoss1[ (tilePitsX + 1) ][ (tilePitsY) ];
+                botRightTile = tileMapBoss1[ (tilePitsX + 1) ][ (tilePitsY + 1) ];
+
+                leftTile = tileMapBoss1[ (tilePitsX) ][ (tilePitsY - 1) ];
+                rightTile = tileMapBoss1[ (tilePitsX) ][ (tilePitsY + 1) ];
+
+                pits[i].checkPits(topTile, rightTile, botTile, leftTile, topLeftTile, topRightTile, botRightTile, botLeftTile);
+            }
+
+            for (var i = 0; i < doors.length; i++) {
+                tileDoorsX = doors[i].tilemapX;
+                tileDoorsY = doors[i].tilemapY;
+
+                if (tileDoorsX === 0) { //using logic to determine if tile we want to check is within tilemap
+                    topTile = ' ';
+                }
+                else {
+                    topTile = tileMapBoss1[ (doors[i].tilemapX - 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsX === 19) {
+                    botTile = ' ';
+                }
+                else {
+                    botTile = tileMapBoss1[ (doors[i].tilemapX + 1) ][ (doors[i].tilemapY) ];
+                }
+
+                if (tileDoorsY === 0) {
+                    leftTile = ' ';
+                }
+                else {
+                    leftTile = tileMapBoss1[ (doors[i].tilemapX) ][ (doors[i].tilemapY - 1) ];
+                }
+
+                if (tileDoorsY === 19) {
+                    rightTile = ' ';
+                }
+                else {
+                    rightTile = tileMapBoss1[ (doors[i].tilemapX) ][ (doors[i].tilemapY + 1) ];
                 }
 
                 doors[i].checkOpening(topTile, rightTile, botTile, leftTile);  
@@ -1937,18 +3020,18 @@ function draw() {
             for (var s = 0; s < skulls.length; s++) {
                 if (skulls[s].health > 0) {
                     skulls[s].checkCollision(walls[j]);
+
+                    for (var f = 0; f < skulls[s].fireballs.length; f++) {
+                        if (skulls[s].fireballs[f].fire === 1) {
+                            skulls[s].fireballs[f].checkCollision(walls[j]);
+                        }
+                    }
                 }
             }
 
             for (var b = 0; b < bullets.length; b++) {
                 if (bullets[b].fire === 1) {
                     bullets[b].checkCollision(walls[j]);
-                }
-            }
-
-            for (var f = 0; f < fireballs.length; f++) {
-                if (fireballs[f].fire === 1) {
-                    fireballs[f].checkCollision(walls[j]);
                 }
             }
         }
@@ -2002,11 +3085,7 @@ function draw() {
                 }
             }
             else {
-                score++;
-
-                if (score === 5) {
-                    gameStart = 4;
-                }
+                totalDead++;
             }
         }
 
@@ -2025,20 +3104,7 @@ function draw() {
                 }
             }
             else {
-                score++;
-
-                if (score === 5) {
-                    gameStart = 4;
-                }
-            }
-        }
-
-        for (var f = 0; f < fireballs.length; f++) {
-            for (var s = 0; s < skulls.length; s++) {
-                if (fireballs[f].fire === 1) {
-                    fireballs[f].draw(skulls[s]);
-                    player.checkCollision(fireballs[f]);
-                }
+                totalDead++;
             }
         }
         
@@ -2049,6 +3115,13 @@ function draw() {
                 player.checkCollision(skulls[s]);
                 pistol.checkCollision(skulls[s]);
 
+                for (var f = 0; f < skulls[s].fireballs.length; f++) {
+                    if (skulls[s].fireballs[f].fire === 1) {
+                        skulls[s].fireballs[f].draw(skulls[s]);
+                        player.checkCollision(skulls[s].fireballs[f]);
+                    }
+                }
+
                 for (var b = 0; b < bullets.length; b++) {
                     if (bullets[b].fire === 1) {
                         bullets[b].checkCollision(skulls[s]);
@@ -2056,20 +3129,44 @@ function draw() {
                 }
             }
             else {
-                score++;
-
-                if (score === 5) {
-                    gameStart = 4;
-                }
+                totalDead++;
             }
         }
-
-        score = 0;
 
         for (var i = 0; i < bullets.length; i++) {
             if (bullets[i].fire === 1) {
                 bullets[i].draw(pistol);
             }
+        }
+
+        if (nextRoom === 6 && totalDead === enemies) {
+            if (doubleDamage.got === 0) {
+                doubleDamage.draw();
+                player.checkCollision(doubleDamage);
+
+                if (frameCount % 40 < 20) {
+                    fill(0,0,0);
+                    rect(doubleDamage.x - 4, doubleDamage.y - 41, 14, 30);
+                    triangle(doubleDamage.x - 8, doubleDamage.y - 16, doubleDamage.x + 3, doubleDamage.y - 1, doubleDamage.x + 14, doubleDamage.y - 16);
+
+                    fill(255,255,255);
+                    rect(doubleDamage.x - 3, doubleDamage.y - 40, 12, 25);
+                    triangle(doubleDamage.x - 7, doubleDamage.y - 15, doubleDamage.x + 3, doubleDamage.y - 2, doubleDamage.x + 13, doubleDamage.y - 15);
+                }
+                else {
+                    fill(0,0,0);
+                    rect(doubleDamage.x - 4, doubleDamage.y - 45, 14, 30);
+                    triangle(doubleDamage.x - 8, doubleDamage.y - 20, doubleDamage.x + 3, doubleDamage.y - 5, doubleDamage.x + 14, doubleDamage.y - 20);
+
+                    fill(255,255,255);
+                    rect(doubleDamage.x - 3, doubleDamage.y - 44, 12, 25);
+                    triangle(doubleDamage.x - 7, doubleDamage.y - 19, doubleDamage.x + 3, doubleDamage.y - 6, doubleDamage.x + 13, doubleDamage.y - 19);
+                }
+            }
+        }
+
+        if (doubleDamage.got === 1) {
+            pistol.type = 1;
         }
 
         player.draw();
@@ -2079,12 +3176,12 @@ function draw() {
             player.pulse();
         }
 
-        pistol.draw();
+        pistol.draw(player);
         pistol.move();
 
         health.updateHealth(player);
         health.draw();
-        ammo.draw();
+        ammo.draw(pistol);
 
         if (keyArray[82] === 1 && reloading === 0) {
             reloading = 1;
@@ -2111,6 +3208,12 @@ function draw() {
             for (var s = 0; s < skulls.length; s++) {
                 if (skulls[s].health > 0) {
                     skulls[s].checkCollision(doors[n]);
+
+                    for (var f = 0; f < skulls[s].fireballs.length; f++) {
+                        if (skulls[s].fireballs[f].fire === 1) {
+                            skulls[s].fireballs[f].checkCollision(doors[n]);
+                        }
+                    }
                 }
             }
 
@@ -2119,24 +3222,47 @@ function draw() {
                     bullets[b].checkCollision(doors[n]);
                 }
             }
-
-            for (var f = 0; f < fireballs.length; f++) {
-                if (fireballs[f].fire === 1) {
-                    fireballs[f].checkCollision(doors[n]);
-                }
-            }
         }
+
+        if (nextRoom === 8) {
+            gameStart = 4;
+        }
+
+        totalDead = 0;
     }
     else if (gameStart === 2) {
-        for(var i = 0; i < clouds.length; i++) {
-            clouds[i].draw();
-            clouds[i].move();
-        }
+        fill(169,169,169);
+        stroke(0,0,0);
+        strokeWeight(1);
+        rect(0,0,800,800);
+
+        fill(0,0,0);
+        rect(0, papers[2].y - 5, 800, 15);
+        rect(745, 0, 15, 350);
+        rect(360, 0, 15, 350);
+        rect(540, 350, 15, 400);
+
+        fill(87, 158, 87);
+        rect(0,710,800,90);
+
+        noStroke();
+
+        for (var g = 0; g < grasses.length; g++) {
+            grasses[g].draw(); 
+         }
 
         board.draw();
 
         for (var p = 0; p < papers.length; p++) {
-            papers[p].draw();
+            if (p === 0) {
+                papers[p].draw(snake);
+            }
+            else if (p === 1) {
+                papers[p].draw(skull);
+            }
+            else {
+                papers[p].draw(beetle);
+            }
         }
 
         for (var n = 0; n < nails.length; n++) {
@@ -2144,8 +3270,13 @@ function draw() {
         }
 
         fill(0, 0, 0);
+        textSize(50);
+        text("NOTICE BOARD", 130, 220);
+
         textSize(15);
-        text("You are tasked with exploring this tomb and getting untold RICHES.\nGo through this tomb by defeating ENEMIES and getting new WEAPONS.\nAfter beating the BOSS on each floor, you may venture deeper into the tomb or return to the surface.\nUse WASD or ARROW keys to move, your bullets will fire where you look after pressing SPACE.\nSome enemies are tough and require more shots, while others are weak to certain kinds of weapons.\nYou have 6 hits which can be replinished by finding hearts that drop after clearing a floor.", 0, 15);
+        text("ATTENTION EXPLORERS:\nA tomb has appeared and we ask you to clear it!\nIt is filled with various ENEMIES (snakes, beetles, skulls).\nEach enemy has unique HEALTH and PATTERNS, be careful!\nOthers found their health and some tendencies shown here.\nBe wary, there are cases of strange foes in the final room!", 80, 250);
+        text("BEETLES move slow and are shy, if spotted it is impossible \nto harm them. \nSNAKES move fast and chase the PLAYER. \nSKULLS do not move, but shoot fireballs at the PLAYER.", 90, 365)
+        text("HOW TO PLAY:\nYou can move with WASD or the ARROW keys.\nUse the mouse to AIM your trusty sidearm.\nTo fire, press the LEFT MOUSE BUTTON.\nTo reload, use all ammo in a magazine or press R.\nYou have 3 HEARTS, normal damage takes out half a heart.\nBe careful of PITS (indicated with red lining of the holes).\nKill all of the enemies in a ROOM to go deeper in the tomb.\nAfter clearing all the FLOORS you WIN!\nIf you lose all HEARTS, you LOSE.", 80, 450)
 
         textSize(25);
         text("Back", 35, 775);
@@ -2156,28 +3287,91 @@ function draw() {
 
         var dummyLoc = {'x': skull.x, 'y': skull.y + 80};
 
+        if (snake.health > 0) {
+            snake.draw(dummyLoc);
+        }
 
-        snake.draw(dummyLoc);
-        skull.draw(dummyLoc);
-        beetle.draw(playerInstr);
+        if (skull.health > 0) {
+            skull.draw(dummyLoc);
+        }
+
+        if (beetle.health > 0) {
+            beetle.draw(playerInstr);
+        }
+
+        for (var i = 0; i < bulletsInstr.length; i++) {
+            if (bulletsInstr[i].fire === 1) {
+                bulletsInstr[i].draw(pistolInstr);
+            }
+        }
 
         playerInstr.draw();
-        pistolInstr.draw();
+        pistolInstr.draw(playerInstr);
+
+        health.updateHealth(player);
+        health.draw();
+        ammoInstr.draw(pistolInstr);
+
+        if (keyArray[82] === 1 && reloading === 0) {
+            reloading = 1;
+            ammoInstr.reloadAnim();
+        }
+
+        for (var b = 0; b < bulletsInstr.length; b++) {
+            if (bulletsInstr[b].fire === 1) {
+                if (snake.health > 0) {
+                bulletsInstr[b].checkCollision(snake);
+                }
+
+                if (skull.health > 0) {
+                    bulletsInstr[b].checkCollision(skull);
+                }
+                
+                if (beetle.health > 0) {
+                    bulletsInstr[b].checkCollision(beetle);
+                }
+            }
+        }
     }
     else if (gameStart === 3) {
-        fill(0,0,0);
+        background(0,0,0);
+
+        fill(255,255,255);
         textSize(70);
-        text("GAME OVER\nYOU LOSE!!!", 200, 400);
+        text("GAME OVER", 120, 400);
+        textSize(50);
+        text("You have died", 180, 475);
     }
     else if (gameStart === 4) {
+        for(var i = 0; i < clouds.length; i++) {
+            clouds[i].draw();
+            clouds[i].move();
+        }
+
+        temple.draw();
+
+        stroke(0,0,0);
+        strokeWeight(1);
+        fill(160,82,45);
+        rect(390, 10, 20, 140);
+
+        fill(255,255,255);
+        triangle(410, 10, 410, 56, 510, 33);
+
+        noStroke();
+
         fill(0,0,0);
         textSize(70);
-        text("GAME OVER\nYOU WIN!!!!!!", 200, 400);
+        text("Tomb Cleared", 70, 225);
+
+        textSize(15);
+        text("Thank you for \nclearing the \ntomb! Your help \nis greatly \nappreciated. \nHelp again soon!", 539, 565);
     }
         // s = mouseX;
         // sStr = str(s);
         // t = mouseY;
-        // tStr = str(t)
+        // tStr = str(t);
+        // fill(255,0,0);
         // text(sStr, 350, 600);
         // text(tStr, 350, 620);
   }
